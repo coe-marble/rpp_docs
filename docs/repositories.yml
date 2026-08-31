@@ -1,0 +1,29 @@
+repositories:
+  - id: rpp_cli
+    path: src/rpp_cli
+    role: CLI for plugin, library, registry, test, and workspace operations.
+    entry_points: [rpp]
+  - id: rpp_common
+    path: src/rpp_common
+    role: Shared plugin contracts, data models, and generated/common types.
+    entry_points: []
+  - id: rpp_orchestrator
+    path: src/rpp_orchestrator
+    role: Workspace, component composition, scripts, and GUI orchestration.
+    entry_points: [rpp ws]
+  - id: rpp_plugin_registrator
+    path: src/rpp_plugin_registrator
+    role: Plugin library management, descriptions, registry, validation, and interface generation.
+    entry_points: [rpp pm]
+  - id: rpp_py
+    path: src/rpp_py
+    role: Python plugin loading, adapters, data management, and component server.
+    entry_points: [rpp_component_server_python]
+  - id: rpp_cpp
+    path: src/rpp_cpp
+    role: C++ runtime, Cap'n Proto transport, embedding, logging, and component server.
+    entry_points: [rpp_component_server_cpp]
+  - id: rpp_testing
+    path: src/rpp_testing
+    role: Shared test plugins, libraries, components, and mock workspaces.
+    entry_points: []
