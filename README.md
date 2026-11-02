@@ -35,19 +35,23 @@ git submodule update --init --recursive
 ./setup.sh
 ```
 
-For C++ support, build the runtime and source the generated environment:
+For C++ support, build the runtime with CMake:
 
 ```bash
-colcon build --symlink-install
-source install/setup.bash
+cmake -S src/rpp_cpp -B build/rpp_cpp
+cmake --build build/rpp_cpp
 ```
+
+In a ROS 2 workspace, `colcon build --symlink-install` remains supported;
+source `install/setup.bash` afterwards.
 
 Then launch the main tools:
 
 ```bash
 rpp pm                 # plugin manager GUI
 rpp ws                 # workspace GUI
-rpp ws create demo /tmp
+rpp library create demo
+rpp ws create demo
 ```
 
 See [Installation and first run](docs/getting-started.md) for prerequisites,
@@ -72,7 +76,7 @@ separation allows one implementation to be reused across multiple workspaces.
 - [System architecture](docs/architecture.md): layers, responsibilities, and runtime data flow.
 - [Repository catalog](docs/repositories.md): every RPP submodule and its public entry points.
 - [CLI](docs/cli.md): `rpp` commands for registry, libraries, workspaces, and testing.
-- [Plugin types and interfaces](docs/plugin-types.md): extension contracts and language boundaries.
+- [Plugin types and interfaces](docs/plugins-and-plugin-types.md): extension contracts and language boundaries.
 - [Installation and first run](docs/getting-started.md): development setup, C++, and ROS 2.
 - [Core workflows](docs/workflows.md): libraries, plugins, interfaces, components, and workspaces.
 - [Contributing documentation](docs/contributing.md): ownership and maintenance rules for this documentation.

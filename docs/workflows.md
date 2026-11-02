@@ -90,8 +90,9 @@ available to the runtime that loads the corresponding plugin.
 ## Compose a workspace
 
 ```bash
-rpp ws create demo /tmp
-rpp ws --root /tmp/demo
+rpp library create demo
+rpp ws create demo
+rpp ws --root <path-to-demo-library>
 ```
 
 The workspace stores scripts and component state in `.rppws`. Components refer

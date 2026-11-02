@@ -34,7 +34,7 @@ Inspect registry state and configuration:
 rpp registry list
 rpp registry info <plugin-id>
 rpp registry config
-rpp registry config USE_ROS2_COMPILATION=True
+rpp registry config set USE_ROS2_COMPILATION true
 ```
 
 Manage a library:
@@ -50,8 +50,9 @@ rpp library list
 Create or open a workspace:
 
 ```bash
-rpp ws create demo /tmp
-rpp ws --root /tmp/demo
+rpp library create demo
+rpp ws create demo
+rpp ws --root <path-to-demo-library>
 ```
 
 

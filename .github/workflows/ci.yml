@@ -1,0 +1,38 @@
+name: Check documentation links
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  links:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out documentation under test
+        uses: actions/checkout@v4
+        with:
+          path: candidate
+      - name: Check out the RPP integration layout
+        uses: actions/checkout@v4
+        with:
+          repository: coe-marble/rpp_dev
+          ref: develop
+          path: rpp_dev
+          submodules: recursive
+          token: ${{ secrets.RPP_CI_TOKEN || github.token }}
+      - name: Overlay documentation under test
+        run: rsync -a --delete --exclude=.git candidate/ rpp_dev/rpp_docs/
+      - name: Check local Markdown links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress --exclude-mail 'rpp_dev/rpp_docs/**/*.md'
