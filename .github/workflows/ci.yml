@@ -36,4 +36,4 @@ jobs:
       - name: Check local Markdown links
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --offline --no-progress --exclude-mail 'rpp_dev/rpp_docs/**/*.md'
+          args: --offline --no-progress --include-mail=false 'rpp_dev/rpp_docs/**/*.md'
