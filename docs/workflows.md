@@ -19,11 +19,13 @@ rpp/
 Create or register a library from the `rpp_dev` environment with:
 
 ```bash
-rpp library create my_library ../libraries
-rpp library register ../libraries/my_library --link
+mkdir -p ../libraries
+rpp library create my_library --path ../libraries
 ```
 
-The `--link` option keeps the library at its original path. This is useful
+`create --path` creates and links the library in that directory. To register
+an existing library there, use `rpp library register ../libraries/my_library --link`
+instead. The `--link` option keeps the library at its original path. This is useful
 during development because changes to plugin source and `plugins.json` remain
 in the working library. A copied registration can be used when the library
 should be managed independently of its original checkout.
@@ -80,9 +82,15 @@ upsert key, so registering the same identity updates the existing record.
 Interfaces are generated from plugin type metadata rather than handwritten per
 language:
 
-The interface generator is owned by `rpp_plugin_registrator`. Use its package
-CLI from that repository, or the corresponding Python API, to generate an
-interface from a plugin description for the target language.
+The interface generator is owned by `rpp_plugin_registrator`. Register the
+Cap'n Proto type source through the CLI to generate its interfaces:
+
+```bash
+rpp library my_library register path/to/my_library/plugin_types/Controller.capnp --type
+```
+
+The source must be inside the library. Use `--override` when replacing an
+already registered type.
 
 Generated interfaces live under `~/.rpp/interfaces` by default and must be
 available to the runtime that loads the corresponding plugin.
