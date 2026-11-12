@@ -119,7 +119,7 @@ be rewritten for a different API.
 
 - Plugin types are defined inside plugin libraries.
 - A library declares its plugin-type source files in its `plugins.json` file.
-- A library declares its dependencies on other libraries in its `plugins.json` file. The registrator uses this information to generate the correct interface for each plugin type.
+- A library declares its dependencies on other libraries in the `Dependencies` list of its `package.json` file or in the `<rpp_dependencies>` element of its `package.xml` file. The registrator uses this information to generate the correct interface for each plugin type.
 - The `PluginTypes` entries point to the Cap'n Proto files that the registrator
 - Keep the plugin-type source path relative to the library root so the library
 	can be copied or linked into another RPP home directory.
@@ -133,7 +133,7 @@ For example, the `rpp_control` library declares its controller plugin types in
         {
 			"Type": "file",
 			"Path": "plugins/controllers/pid_pose_controller.hpp",
-			"Name": "PIDPoseController"
+			"Name": "PIDPoseController2D"
 		}
 	],
 	"PluginTypes": [
