@@ -43,6 +43,9 @@ docker run --rm -it \
 Inside the container, run each tutorial in its own Python process:
 
 ```bash
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
+
 python3 tutorials/01_plugin_type/run.py
 python3 tutorials/02_plugin_implementation/run.py
 python3 tutorials/03_registration/run.py
@@ -53,7 +56,8 @@ python3 tutorials/06_lifecycle/run.py
 
 The shell sources the installed ROS and RPP workspace automatically.
 `RPP_CPP_CORE_PATH` lets registration find the native runtime even though each
-tutorial creates and cleans up its own temporary RPP home and workspace.
+tutorial uses the selected RPP home and keeps its files under
+`$RPP_HOME/tutorials`.
 See the [tutorial guide](tutorials/README.md) for the learning path
 and expected results. To keep source edits, use the exported workspace below.
 

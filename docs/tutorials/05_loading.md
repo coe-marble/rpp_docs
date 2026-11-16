@@ -13,6 +13,8 @@ The driver prepares its own registration and workspace:
 From `rpp_dev/src/rpp_demos`:
 
 ```bash
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
 python3 tutorials/05_loading/run.py
 ```
 
@@ -27,4 +29,5 @@ identity = 3
 
 The driver then reports expected failures for an unknown workspace component
 and an absent component description path. All constructed runtimes close
-before temporary data is removed, including on invocation failures.
+on exit, including on invocation failures. The workspace and registry persist
+in `RPP_HOME`.

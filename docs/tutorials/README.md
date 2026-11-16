@@ -10,7 +10,7 @@ management. Integrated demos and benchmarks have separate folders.
 rpp_demos/
   tutorials/
     example_library/          # Schema, implementation, and library metadata
-    tutorial_support.py       # Isolated setup and cleanup
+    tutorial_support.py       # Persistent setup and runtime cleanup
     01_plugin_type/
     02_plugin_implementation/
     03_registration/
@@ -22,6 +22,19 @@ rpp_demos/
 ```
 
 ## Prerequisites and execution
+
+First, select the RPP home in the shell where you will run the tutorials:
+
+```bash
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
+```
+
+Run these commands inside the container when using the development image, or
+in your installed RPP environment for a host setup. All six tutorials use this
+home's registry and configuration. Their copied example library and workspaces
+remain under `$RPP_HOME/tutorials` for inspection after each run. The drivers
+require `RPP_HOME` to be set and never replace it with a temporary directory.
 
 The recommended way to run these tutorials is the
 [`rpp_dev` development image](../development-image.md), which includes the tutorial
@@ -44,8 +57,8 @@ dependencies. These drivers use the public `LibraryManager`, `Workspace`,
 
 Registration generates interfaces and may compile native supporting artifacts
 even for Python plugins. The container command explicitly exports
-`RPP_CPP_CORE_PATH` so each temporary tutorial home can locate the native runtime
-without inheriting the normal home's settings. In a host setup, export this
+`RPP_CPP_CORE_PATH` so registration can locate the native runtime.
+In a host setup, export this
 variable to the directory containing `librpp_cpp` and `librpp_cpp_core` before
 running the drivers (for example, `build/rpp_cpp` for a standalone build or
 `install/rpp_cpp/lib` for an isolated colcon installation). The examples do not install dependencies
@@ -68,13 +81,16 @@ independently. Run each in a fresh Python process because RPP caches
 configuration and generated modules. Absolute driver paths also work from
 other working directories.
 
-Every driver copies the example library to a temporary directory, sets a
-temporary `RPP_HOME` before importing RPP, registers the necessary artifacts,
-and creates workspace components as needed. Runtime handles close before the
-temporary sources, registry, generated artifacts, and workspace are deleted,
-including on exceptions. The normal registry and checked-in sources are not
-modified. A forcibly killed process may leave the printed temporary directory
-behind; remove it after confirming the process has stopped.
+Every driver copies the example library to `$RPP_HOME/tutorials/example_library`,
+registers or refreshes it in the selected home's registry, and creates a
+workspace under `$RPP_HOME/tutorials/<tutorial>/workspace` as needed. Runtime
+handles close on exit, including on exceptions; sources, generated artifacts,
+registry entries, and workspaces persist. Rerunning a tutorial restores its
+example sources and resets its component parameters to the demonstrated values.
+The `example_library` name is reserved for these examples; a registration from
+another source path causes an error. Run the drivers sequentially because they
+share this library. Tutorial 1 removes its implementation registration to show
+the type alone; the later tutorials register the implementation again.
 
 ## Learning path
 

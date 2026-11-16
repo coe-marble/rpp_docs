@@ -12,6 +12,8 @@ The driver prepares registration and components automatically:
 From `rpp_dev/src/rpp_demos`:
 
 ```bash
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
 python3 tutorials/02_plugin_implementation/run.py
 ```
 
@@ -26,5 +28,5 @@ Expected failure (configure invalid.gain): ...gain must be a finite number...
 The last component supplies a string gain and fails configuration. The plugin
 also rejects non-finite coefficients, inputs, and results. Its own active flag
 protects calls through retained native references while inactive. All runtime
-handles close before the temporary workspace and registry are deleted,
-including the partially configured component.
+handles close on exit, including the partially configured component. The
+workspace and registry remain in `RPP_HOME` for inspection.

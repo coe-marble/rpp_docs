@@ -11,6 +11,8 @@ Use the [shared prerequisites](README.md#prerequisites-and-execution):
 From `rpp_dev/src/rpp_demos`:
 
 ```bash
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
 python3 tutorials/04_configuration/run.py
 ```
 
@@ -25,8 +27,8 @@ native Python components in future builds, rather than editing one component.
 
 Runtime construction snapshots parameters. Close and rebuild to read changed
 workspace settings. Independent roots are sufficient here; scripts and nested
-component slots can follow in another tutorial. Runtime handles and temporary
-workspace data are cleaned up automatically.
+component slots can follow in another tutorial. Runtime handles close
+automatically; workspace data remains under `$RPP_HOME/tutorials`.
 
 See [component folders and workspace layout](../workspaces.md#workspace-and-rppws-folder-layout)
 for copying/reusing a component, and

@@ -10,10 +10,12 @@ Use the [shared prerequisites](README.md#prerequisites-and-execution),
 then run from `rpp_dev/src/rpp_demos`:
 
 ```bash
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
 python3 tutorials/01_plugin_type/run.py
 ```
 
-[run.py](../../../src/rpp_demos/tutorials/01_plugin_type/run.py) omits implementations from the temporary manifest, registers
+[run.py](../../../src/rpp_demos/tutorials/01_plugin_type/run.py) omits implementations from the copied manifest under `$RPP_HOME/tutorials`, registers
 the type, and imports its generated interface. Tutorial 3 explains registration.
 Look for:
 
@@ -24,5 +26,5 @@ Implementations: 0
 ```
 
 A lookup for `MissingType` produces an expected failure: only registered
-identities resolve. The temporary registry and generated interfaces are
-removed automatically on exit.
+identities resolve. The registry and generated interfaces remain in `RPP_HOME`
+after exit.

@@ -8,6 +8,8 @@ Use the [shared prerequisites](README.md#prerequisites-and-execution):
 From `rpp_dev/src/rpp_demos`:
 
 ```bash
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
 python3 tutorials/06_lifecycle/run.py
 ```
 
@@ -35,4 +37,5 @@ Finally, a non-finite input causes an invocation error. A `finally` block
 closes the recovered runtime, deactivating it and clearing its configuration.
 The retained plugin reference then rejects calls. Invocation failure does not
 automatically imply a lifecycle transition: the application owns shutdown.
-All remaining runtimes and temporary data are cleaned up on exit.
+All remaining runtimes close on exit. Tutorial sources, registry entries, and
+workspace data remain in `RPP_HOME`.
