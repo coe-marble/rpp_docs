@@ -219,7 +219,7 @@ plugins use contexts. Regenerate interfaces and adapters and rebuild dependent
 C++ code together with matching runtimes. See [registry upgrades](registry.md#upgrade-an-existing-registry)
 and the [RPC response ownership rules](component_connection.md#c-rpc-result-lifetime).
 
-Source references: [Python runtime](../../src/rpp_py/rpp_py/runtime.py),
-[Python context](../../src/rpp_py/rpp_py/context.py),
-[Python builder](../../src/rpp_py/rpp_py/context_builder.py), and
-[C++ runtime](../../src/rpp_cpp/include/rpp_cpp/runtime.hpp).
+Source references: [Python runtime](https://github.com/coe-marble/rpp_py/blob/develop/rpp_py/runtime.py),
+[Python context](https://github.com/coe-marble/rpp_py/blob/develop/rpp_py/context.py),
+[Python builder](https://github.com/coe-marble/rpp_py/blob/develop/rpp_py/context_builder.py), and
+[C++ runtime](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/runtime.hpp).

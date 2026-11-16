@@ -1,18 +1,34 @@
 # Tutorial 4 Configuration and composition
 
-An implementation is reusable; a component is a self-contained saved
-configuration of that implementation. [run.py](../../../src/rpp_demos/tutorials/04_configuration/run.py) creates `processor` and `identity` with
-`Workspace.create_component`, using the same plugin and distinct component IDs.
-`component_parameter_store.save` persists processor settings. Identity uses
-the defaults. Both are configured without activation.
+## Prerequisites
 
-Use the [shared prerequisites](README.md#prerequisites-and-execution):
-
-From `rpp_dev/src/rpp_demos`:
+Follow the [shared prerequisites](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/README.md#prerequisites-and-execution) to prepare your RPP environment.
+In the shell where you will run this tutorial, select and initialize its home:
 
 ```bash
 export RPP_HOME="$HOME/.rpp_tutorials"
 rpp init-home
+```
+
+Run the commands below from `rpp_dev/src/rpp_demos`, using that same shell.
+The driver prepares the registrations and components it needs, so it can run
+independently of the other tutorials.
+
+## Description
+
+Create two components from one implementation and inspect their independent saved settings.
+
+An implementation is reusable; a component is a self-contained saved
+configuration of that implementation. [run.py](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/04_configuration/run.py) creates `processor` and `identity` with
+`Workspace.create_component`, using the same plugin and distinct component IDs.
+`component_parameter_store.save` persists processor settings. Identity uses
+the defaults. Both are configured without activation.
+
+## Implementation
+
+### Run the example
+
+```bash
 python3 tutorials/04_configuration/run.py
 ```
 
@@ -34,3 +50,38 @@ See [component folders and workspace layout](../workspaces.md#workspace-and-rppw
 for copying/reusing a component, and
 [Python parameter definitions and YAML](../workspaces.md#parameters-are-python-definitions)
 for executable configuration and the planned shared-parameter tutorial.
+
+### Inspect the result
+
+Inspect the saved configuration after the driver finishes:
+
+```bash
+workspace="$RPP_HOME/tutorials/04_configuration/workspace"
+
+# Show the workspace summary and the components it contains.
+rpp ws info "$workspace"
+rpp ws component list "$workspace"
+
+# Show processor's identity and the paths to its saved configuration.
+rpp ws component info "$workspace" processor
+rpp ws component context "$workspace" processor
+
+# Read all saved parameters, or just one value.
+rpp ws component parameter get "$workspace" processor
+rpp ws component parameter get "$workspace" processor gain
+```
+
+### Change a saved parameter
+
+The saved gain should be `2`. To explore editing through the CLI, run:
+
+```bash
+# Save a new gain, inspect it, then restore the tutorial value.
+rpp ws component parameter set "$workspace" processor gain 3.0
+rpp ws component parameter get "$workspace" processor gain
+rpp ws component parameter set "$workspace" processor gain 2.0
+```
+
+These commands edit the persisted component settings. A runtime reads them
+when it is constructed; an existing runtime keeps its parameter snapshot.
+Rerunning the driver also resets its saved parameters to the tutorial values.

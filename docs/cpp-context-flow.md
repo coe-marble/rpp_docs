@@ -271,13 +271,13 @@ this increment. Native C++ trees create no RPC executor or external process.
 
 ## Source map
 
-- [RppDataManager](../../src/rpp_cpp/include/rpp_cpp/data_manager.hpp)
-- [ComponentRuntimeBuilder](../../src/rpp_cpp/include/rpp_cpp/component_runtime_builder.hpp)
-- [ComponentRuntime facade](../../src/rpp_cpp/include/rpp_cpp/runtime.hpp), [implementation](../../src/rpp_cpp/src/runtime.cpp), and [internal component data](../../src/rpp_cpp/include/rpp_cpp/component_data.hpp)
-- [ComponentContext interface](../../src/rpp_cpp/include/rpp_cpp/context.hpp) and [implementation](../../src/rpp_cpp/src/context.cpp)
-- [SlotManager interface](../../src/rpp_cpp/include/rpp_cpp/slot_manager.hpp) and [lifecycle implementation](../../src/rpp_cpp/src/slot_manager.cpp)
-- [ComponentConstructor interface](../../src/rpp_cpp/include/rpp_cpp/component_constructor.hpp) and [implementation](../../src/rpp_cpp/src/component_constructor.cpp)
-- [Native plugin loader](../../src/rpp_cpp/src/plugin_loader.cpp)
+- [RppDataManager](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/data_manager.hpp)
+- [ComponentRuntimeBuilder](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/component_runtime_builder.hpp)
+- [ComponentRuntime facade](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/runtime.hpp), [implementation](https://github.com/coe-marble/rpp_cpp/blob/develop/src/runtime.cpp), and [internal component data](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/component_data.hpp)
+- [ComponentContext interface](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/context.hpp) and [implementation](https://github.com/coe-marble/rpp_cpp/blob/develop/src/context.cpp)
+- [SlotManager interface](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/slot_manager.hpp) and [lifecycle implementation](https://github.com/coe-marble/rpp_cpp/blob/develop/src/slot_manager.cpp)
+- [ComponentConstructor interface](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/component_constructor.hpp) and [implementation](https://github.com/coe-marble/rpp_cpp/blob/develop/src/component_constructor.cpp)
+- [Native plugin loader](https://github.com/coe-marble/rpp_cpp/blob/develop/src/plugin_loader.cpp)
 
 ## Plugin-facing context and threading selection
 

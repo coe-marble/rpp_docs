@@ -131,7 +131,7 @@ The default matrix is 270 runs: one RPP baseline plus two ROS QoS modes, across
 six arrangements, three profiles, and five repetitions. Each run has two seconds
 of warmup and ten seconds of measurement, plus startup and cleanup. Cases are
 shuffled with a recorded seed to reduce ordering bias. Defaults in
-[profiles.json](../../../src/rpp_demos/benchmarks/communication/profiles.json) are:
+[profiles.json](https://github.com/coe-marble/rpp_demos/blob/develop/benchmarks/communication/profiles.json) are:
 
 | Profile | Payload bytes per message | Target exchanges per second |
 | --- | --- | --- |

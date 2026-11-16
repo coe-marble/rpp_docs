@@ -24,7 +24,7 @@ See [C++ context construction and lifecycle](cpp-context-flow.md) for the
 class responsibilities, call flow, ownership, and runtime operations.
 
 Start a behavior review with
-[the component runtime scenarios](../../src/rpp_cpp/tests/test_component_runtime_scenarios.cpp).
+[the component runtime scenarios](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/test_component_runtime_scenarios.cpp).
 The same scenarios run for `SingleThreaded` and `Concurrent`: activation,
 deactivation/reactivation, switching with and without state handover, source and
 target failure recovery, static slots, multiple-active slots, and shutdown order.
@@ -35,9 +35,9 @@ their small construction bridge uses production slot creation and registration.
 They do not cover description loading, shared-library loading, or external hosts.
 
 Shared test support lives in
-[`fake_plugins.hpp`](../../src/rpp_cpp/tests/support/fake_plugins.hpp) (plugin behavior, failure
+[`fake_plugins.hpp`](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/support/fake_plugins.hpp) (plugin behavior, failure
 controls, and event recording) and
-[`runtime_test_helpers.hpp`](../../src/rpp_cpp/tests/support/runtime_test_helpers.hpp) (the single
+[`runtime_test_helpers.hpp`](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/support/runtime_test_helpers.hpp) (the single
 private-construction bridge and reusable fixtures). `simple_controllers()` keeps
 the two-controller case; `nested_controllers()` builds two switchable branches:
 
@@ -60,7 +60,7 @@ after partial activation, and cleanup after failure under both threading policie
 
 The RPC control layer is separate: `RpcControlService` and `RpcControlClient` in
 `rpc_control_service.hpp` expose remote configuration/cleanup and adapter discovery.
-[Its tests](../../src/rpp_cpp/tests/test_rpc_control_service.cpp) use the `RpcControlService` suite.
+[Its tests](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/test_rpc_control_service.cpp) use the `RpcControlService` suite.
 The shared generated `plugin_runtime.capnp` protocol still uses the wire interface
 name `PluginRuntime`, which is also consumed by Python.
 

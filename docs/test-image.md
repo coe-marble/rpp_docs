@@ -26,7 +26,7 @@ Set `IMAGE_TAG` to use another tag.
 
 ## Publishing and access
 
-[`.github/workflows/test-container.yml`](../../.github/workflows/test-container.yml) builds the image when this directory
+[`.github/workflows/test-container.yml`](https://github.com/coe-marble/rpp_dev/blob/develop/.github/workflows/test-container.yml) builds the image when this directory
 changes and publishes it to GitHub Container Registry on pushes to `main` or
 `develop`. Before private repositories consume the image, grant their
 GitHub Actions access to the `rpp-test-container` package and give the

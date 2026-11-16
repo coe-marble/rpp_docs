@@ -67,9 +67,9 @@ languages can be used with components implemented in either language:
 - A Python component can use a Python plugin or a C++ plugin.
 - A C++ component can use a C++ plugin or a Python plugin.
 
-[C++ plugin example](../../src/rpp_testing/rpp_testing/data/example_plugins/example_plugin_simple_cpp.cpp)
+[C++ plugin example](https://github.com/coe-marble/rpp_testing/blob/develop/rpp_testing/data/example_plugins/example_plugin_simple_cpp.cpp)
 
-[Python plugin example](../../src/rpp_testing/rpp_testing/data/example_plugins/example_plugin_simple_py.py)
+[Python plugin example](https://github.com/coe-marble/rpp_testing/blob/develop/rpp_testing/data/example_plugins/example_plugin_simple_py.py)
 
 ## Execution modes
 

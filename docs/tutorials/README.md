@@ -36,6 +36,25 @@ home's registry and configuration. Their copied example library and workspaces
 remain under `$RPP_HOME/tutorials` for inspection after each run. The drivers
 require `RPP_HOME` to be set and never replace it with a temporary directory.
 
+The shared helper refreshes `rpp_common` before registering the example library.
+The example contract imports its `Anot` schema, so this dependency must be
+registered with the current registrator version. To inspect or refresh it
+manually in an existing tutorial home:
+
+```bash
+rpp library info rpp_common
+rpp library refresh rpp_common
+```
+
+This also repairs a missing library registration-version record left by older
+home initialization code, without resetting the tutorial home.
+
+Each walkthrough includes CLI commands to inspect what its driver registered
+or saved. Run those commands after the driver, in the same shell. If you open
+another shell, set `export RPP_HOME="$HOME/.rpp_tutorials"` there too so the CLI
+inspects the tutorial home. Use `rpp --help`, `rpp registry --help`,
+`rpp library --help`, and `rpp ws component --help` to explore the commands.
+
 The recommended way to run these tutorials is the
 [`rpp_dev` development image](../development-image.md), which includes the tutorial
 sources, installed RPP runtime, and native registration tools. Start a tutorial shell from the host:

@@ -5,12 +5,12 @@ declared as package data, so wheels and source distributions retain them.
 This package is used by the other packages in a way that allows them to run tests without having to include the testing data in their own repositories. The testing data is stored in a separate repository and is installed as a package dependency.
 
 Source fixtures and helper scripts live in
-[`rpp_testing`](../../src/rpp_testing). See the [test image](test-image.md)
+[`rpp_testing`](https://github.com/coe-marble/rpp_testing/tree/develop). See the [test image](test-image.md)
 and [integration CI](integration.md) for the shared development infrastructure.
 
 ## Precompiled fixture
 
-[`scripts/build_rpp_autogen.sh`](../../src/rpp_testing/scripts/build_rpp_autogen.sh) creates `rpp_testing/rpp_autogen/.rpp`,
+[`scripts/build_rpp_autogen.sh`](https://github.com/coe-marble/rpp_testing/blob/develop/scripts/build_rpp_autogen.sh) creates `rpp_testing/rpp_autogen/.rpp`,
 including generated interfaces and precompiled fixture plugins. It is intended
 for the manually triggered fixture publishing workflow. `rpp_cpp` consumes
 this directory directly; it does not generate or download test artifacts. The

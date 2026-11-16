@@ -130,6 +130,6 @@ a destroyed response. Existing generated adapters do not acquire this fix until
 regenerated and rebuilt. See [result lifetime](component_connection.md#c-rpc-result-lifetime)
 for shutdown and thread-affinity requirements.
 
-Source references: [registry paths and settings](../../src/rpp_plugin_registrator/rpp_plugin_registrator/registry_config.py),
-[library manager](../../src/rpp_plugin_registrator/rpp_plugin_registrator/library_manager.py),
-and [C++ registration profiles](../../src/rpp_plugin_registrator/rpp_plugin_registrator/plugin_registrator/cpp.py).
+Source references: [registry paths and settings](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/registry_config.py),
+[library manager](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/library_manager.py),
+and [C++ registration profiles](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/plugin_registrator/cpp.py).
