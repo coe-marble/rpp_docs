@@ -1,60 +1,98 @@
 # Installation and first run
 
+## Recommended tutorial environment
+
+Use the `rpp_dev` [development image](development-image.md) for the
+[tutorials](tutorials/README.md). It includes their sources, editable RPP packages,
+ROS 2 Lyrical, and native registration tools. The image guide explains temporary
+sessions and exporting a persistent workspace for development.
+
+The instructions below install a source checkout on the host instead. Commands
+start in the `rpp_dev` repository unless another directory is stated.
+
 ## Prerequisites
 
-- Git with submodule support
-- Python 3 and `pip`
-- CMake, a C++17 compiler, Cap'n Proto, pybind11, and `spdlog` for C++ support
-- `colcon` when building the C++ runtime through a ROS 2 workspace
-- ROS 2 only when ROS 2 logging or ROS 2 integration is required
+- Git with access to the submodule repositories.
+- Python 3.10 or newer, `pip`, and `venv`.
+- A native development toolchain: CMake, a C++17 compiler, Python development
+  headers, pybind11, nlohmann-json, GDB, and either ROS 2 logging or `spdlog`.
+- Cap'n Proto **1.1.0**. The development setup pins `capnproto=1.1.0-2.1` and
+  `libcapnp-dev=1.1.0-2.1`; C++ generated sources require the matching release.
+- Qt Python bindings (`python3-pyqt6`) for the GUIs.
+- ROS 2 and `colcon` for ROS integration; ROS itself is optional for native RPP.
+
+Registration can generate and compile native supporting artifacts even for
+Python plugins. A Python-only application may still need these native tools.
 
 ## Install the development checkout
 
-From the `rpp_dev` repository:
-
 ```bash
-git submodule update --init --recursive
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
 ./setup.sh
 ```
 
-The setup script installs the Python submodules in editable mode and runs
-`rpp init-home`. Editable installs mean that changes in a submodule are visible
-without reinstalling the package.
+`setup.sh` requires an active virtual environment. It installs its pinned system
+packages using `sudo`, initializes submodules recursively, and installs Python
+packages editable with their declared dependencies. `--system-site-packages`
+keeps system-provided Qt and ROS modules available. On a machine where system
+packages and submodules are already prepared, `./setup.sh --install` performs
+only Python dependency/package installation.
+
+Setup does not initialize the RPP home. Prepare the native runtime before
+initialization/registration so generated libraries can locate it.
 
 ## Build the C++ runtime
 
-Python-only users can skip this step. A standalone CMake build is sufficient
-for C++ components after the Python packages have been installed:
+A standalone build from the checkout:
 
 ```bash
-cmake -S src/rpp_cpp -B build/rpp_cpp
+cmake -S src/rpp_cpp -B build/rpp_cpp -DBUILD_TESTING=OFF
 cmake --build build/rpp_cpp
+export RPP_CPP_CORE_PATH="$(pwd)/build/rpp_cpp"
+rpp init-home
 ```
 
-The C++ package uses ROS 2 logging when `rclcpp` is available; otherwise it
-falls back to `spdlog`. In a ROS 2 workspace, `colcon build --symlink-install`
-remains supported; source `install/setup.bash` afterwards.
+`RPP_CPP_CORE_PATH` selects the directory containing the built RPP shared
+libraries. The same setting can be persisted using
+`rpp registry config set RPP_CPP_CORE_PATH /absolute/path/to/build/rpp_cpp`.
+CMake uses `rclcpp` logging when available and `spdlog` otherwise.
 
-## ROS 2 mode
-
-Source the ROS 2 environment in the same shell that launches RPP. Then enable
-ROS 2 compilation in the global RPP configuration:
+For a ROS 2 workspace, activate the Python environment and source ROS in the
+same shell, then build from the workspace root containing `src/rpp_dev`:
 
 ```bash
+source /opt/ros/lyrical/setup.bash
+colcon build --base-paths src/rpp_dev/src --packages-up-to rpp_cpp \
+    --symlink-install --cmake-args -DBUILD_TESTING=OFF
+source install/setup.bash
+export RPP_USE_ROS2_COMPILATION=true
+rpp init-home
 rpp registry config set USE_ROS2_COMPILATION true
 ```
 
-Inspect the active configuration with:
-
-```bash
-rpp registry config
-```
+The environment setting enables ROS lookup during first initialization; the
+registry setting persists it. Keep the overlay sourced whenever launching RPP.
+Build `rpp_ros2` through ament/colcon when using its
+[slot services and status topics](ros2-integration.md).
 
 ## Launch the tools
 
 ```bash
-rpp pm                 # plugin manager
+rpp pm                 # plugin manager GUI
 rpp ws                 # workspace GUI
 rpp library create demo
 rpp ws create demo
 ```
+
+See [workflows](workflows.md) for registering libraries and composing components,
+and [CLI](cli.md) for command arguments. Select an isolated registry using
+`RPP_HOME` or `rpp --rpp-home DIRECTORY ...` before loading RPP modules.
+
+## Upgrade an existing installation
+
+Update the source packages and matching native runtime, then follow
+[registry migration](registry.md#upgrade-an-existing-registry). Regenerate
+interfaces/adapters and rebuild downstream C++ artifacts together.
+`rpp init-home --override` resets installed library registrations; use migration
+when preserving an existing registry.

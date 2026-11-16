@@ -3,8 +3,10 @@
 A **plugin type** is the contract implemented by one or more plugins. It
 defines the methods, message types, lifecycle, and adapter information needed
 to instantiate and use a plugin. A **plugin** is a concrete implementation of
-one plugin type. A **component** is a workspace-owned configured instance of a
-plugin, optionally containing subcomponents.
+one plugin type. A **component** is a self-contained saved configuration of a plugin, optionally
+containing concrete subcomponents. Its folder can be copied and loaded in
+another workspace/runtime; see [component reuse and layout](workspaces.md).
+Loading that configuration constructs a runtime instance.
 
 At the moment, plugin types are defined with Cap'n Proto schemas. The schema is the
 language-neutral source of truth for the messages and interfaces exchanged by
@@ -74,6 +76,8 @@ languages can be used with components implemented in either language:
 When the component and plugin use the same language, the plugin is loaded
 directly in the component process. The runtime imports the Python module or
 loads the C++ implementation using the normal language-specific mechanism.
+Construction does not configure or activate the instance; applications control
+its [managed lifecycle](runtime-lifecycle.md).
 From the component's point of view, it uses the plugin through its registered
 plugin-type interface.
 
@@ -120,7 +124,8 @@ be rewritten for a different API.
 - Plugin types are defined inside plugin libraries.
 - A library declares its plugin-type source files in its `plugins.json` file.
 - A library declares its dependencies on other libraries in its `plugins.json` file. The registrator uses this information to generate the correct interface for each plugin type.
-- The `PluginTypes` entries point to the Cap'n Proto files that the registrator
+- The `PluginTypes` entries point to Cap'n Proto files whose annotated interfaces
+  the registrator discovers and registers.
 - Keep the plugin-type source path relative to the library root so the library
 	can be copied or linked into another RPP home directory.
 
@@ -152,3 +157,22 @@ The `Plugins` array declares concrete plugin implementations. The
 types. The registrator reads the declared file, discovers each
 `$Anot.plugin("...")` interface, and adds the discovered plugin types to the
 library registry when the library is registered or refreshed.
+
+## Lifecycle state and generated adapters
+
+Plugin contracts can declare an owned handover state with
+`$Anot.lifecycleState("Estimate")`, naming a local non-generic struct. The
+registrator generates Python dataclasses and C++ native values for lifecycle
+callbacks. Stateless types take no activation-state argument.
+
+See [typed handover](runtime-lifecycle.md#typed-handover) for callback results and
+support boundaries. Adapted configure/cleanup is available; adapted activation,
+deactivation, and state handover remain pending. Generated clients and servers
+must match their runtimes. Regenerate adapters and rebuild downstream C++ code
+when upgrading the protocol or generated interface ownership rules; see
+[registry compatibility](registry.md#generated-code-compatibility).
+
+C++ code using only the native contract includes `<Type>.hpp`. Code constructing
+RPC adapters explicitly includes `<Type>_Adapter_Client.hpp` or
+`<Type>_Adapter_Server.hpp`. See [RPC result lifetime](component_connection.md#c-rpc-result-lifetime)
+for retained views and shutdown requirements.

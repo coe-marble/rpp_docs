@@ -27,3 +27,11 @@ repositories:
     path: src/rpp_testing
     role: Shared test plugins, libraries, components, and mock workspaces.
     entry_points: []
+  - id: rpp_demos
+    path: src/rpp_demos
+    role: Runnable tutorials, integrated demo sources, and communication benchmarks.
+    entry_points: []
+  - id: rpp_ros2
+    path: src/rpp_ros2
+    role: ROS 2 per-slot lifecycle services and status topics for managed runtimes.
+    entry_points: []

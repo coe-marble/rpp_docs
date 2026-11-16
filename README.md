@@ -25,37 +25,14 @@ RPP currently supports:
 - **Python**, through the `rpp_py` runtime.
 - **C++**, through the `rpp_cpp` runtime.
 
-## Quick start
+## Start here
 
-The integration checkout is `rpp_dev`. Initialize its submodules and install
-the Python packages with:
+Use the [development image](docs/development-image.md), the recommended tutorial
+environment, then follow the [six runnable tutorials](docs/tutorials/README.md).
+For host installation, use [Installation and first run](docs/getting-started.md).
 
-```bash
-git submodule update --init --recursive
-./setup.sh
-```
-
-For C++ support, build the runtime with CMake:
-
-```bash
-cmake -S src/rpp_cpp -B build/rpp_cpp
-cmake --build build/rpp_cpp
-```
-
-In a ROS 2 workspace, `colcon build --symlink-install` remains supported;
-source `install/setup.bash` afterwards.
-
-Then launch the main tools:
-
-```bash
-rpp pm                 # plugin manager GUI
-rpp ws                 # workspace GUI
-rpp library create demo
-rpp ws create demo
-```
-
-See [Installation and first run](docs/getting-started.md) for prerequisites,
-ROS 2 configuration, and the complete setup flow.
+Existing installations should follow [registry migration](docs/registry.md#upgrade-an-existing-registry)
+after updating packages and matching native artifacts.
 
 ## How RPP fits together
 
@@ -64,8 +41,9 @@ RPP is organized around three stages:
 1. **Define** a language-neutral plugin type and its interface.
 2. **Register** concrete implementations and their metadata in the RPP home
     directory, normally `~/.rpp`.
-3. **Compose and execute** plugin instances as components inside an RPP
-    workspace, identified by its `.rppws` directory.
+3. **Compose and execute** saved components through managed runtime handles and
+    slots, with explicit configuration, activation, and shutdown. Workspaces are
+    identified by their `.rppws` directory.
 
 The registry owns metadata and generated interfaces. Libraries own plugin
 source. Workspaces own composition, configuration, and component state. This
@@ -73,32 +51,28 @@ separation allows one implementation to be reused across multiple workspaces.
 
 ## Documentation map
 
-- [System architecture](docs/architecture.md): layers, responsibilities, and runtime data flow.
-- [Repository catalog](docs/repositories.md): every RPP submodule and its public entry points.
-- [CLI](docs/cli.md): `rpp` commands for registry, libraries, workspaces, and testing.
-- [Plugin types and interfaces](docs/plugins-and-plugin-types.md): extension contracts and language boundaries.
-- [Installation and first run](docs/getting-started.md): development setup, C++, and ROS 2.
-- [Core workflows](docs/workflows.md): libraries, plugins, interfaces, components, and workspaces.
-- [Contributing documentation](docs/contributing.md): ownership and maintenance rules for this documentation.
+| Topic | Guide |
+| --- | --- |
+| Setup | [Installation](docs/getting-started.md), [development image](docs/development-image.md) |
+| Learning path | [Tutorials](docs/tutorials/README.md), [integrated demo plan](docs/demos.md) |
+| Concepts | [Architecture](docs/architecture.md), [plugin contracts](docs/plugins-and-plugin-types.md) |
+| Composition | [Core workflows](docs/workflows.md), [components, workspace layout, and parameters](docs/workspaces.md) |
+| Execution | [Managed runtimes and lifecycle](docs/runtime-lifecycle.md), [component connections](docs/component_connection.md) |
+| C++ details | [Runtime guide](docs/cpp-runtime.md), [construction and ownership](docs/cpp-context-flow.md) |
+| ROS 2 | [Slot services and status topics](docs/ros2-integration.md) |
+| Registry and commands | [Registration and upgrades](docs/registry.md), [CLI reference](docs/cli.md) |
+| Measurements | [Benchmarks](docs/benchmarks/README.md), [communication benchmark](docs/benchmarks/communication.md) |
+| Development | [Repository catalog](docs/repositories.md), [integration and CI](docs/integration.md), [testing support](docs/testing.md), [test image](docs/test-image.md) |
+| Documentation | [Contributing](docs/contributing.md), [historical lifecycle design](docs/plans/managed-plugin-lifecycle/feature-description.md) |
 
 ## Documentation ownership
 
-System documentation is maintained here rather than scattered across the
-submodules:
+All RPP user and developer guides live in `rpp_docs`. Individual repositories
+keep brief README descriptions and links here; executable examples, schemas,
+fixtures, and source API comments stay beside their implementation. The
+integration repository `rpp_dev` pins the coordinated source and docs revisions.
 
-- `rpp_docs` owns architecture, terminology, integration behavior, and
-  cross-repository workflows.
-- Each implementation repository owns package-local API details and source
-  examples in its own README.
-- `rpp_dev` owns the integration checkout and submodule revisions.
-
-The repository inventory is declared in
-[`docs/repositories.yml`](docs/repositories.yml). Validate it from a checkout
-of `rpp_dev` with:
-
-```bash
-python3 tools/check_repositories.py --workspace ../
-```
-
-The dependency-free checker confirms that all seven declared submodule paths
-exist. It does not copy or modify files in the implementation repositories.
+The nine implementation submodules are declared in
+[`docs/repositories.yml`](docs/repositories.yml). The dependency-free inventory
+checker is documented in [Contributing](docs/contributing.md); it checks catalog
+paths without modifying implementation repositories.

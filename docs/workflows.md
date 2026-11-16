@@ -93,7 +93,8 @@ The source must be inside the library. Use `--override` when replacing an
 already registered type.
 
 Generated interfaces live under `~/.rpp/interfaces` by default and must be
-available to the runtime that loads the corresponding plugin.
+available to the runtime that loads the corresponding plugin. Registration can
+compile native artifacts; see [profiles and compatibility](registry.md).
 
 ## Compose a workspace
 
@@ -103,18 +104,38 @@ rpp ws create demo
 rpp ws --root <path-to-demo-library>
 ```
 
-The workspace stores scripts and component state in `.rppws`. Components refer
-to registered plugins; component folders contain descriptions, parameters,
-callbacks, and nested subcomponents as needed. Keep source libraries outside
-the workspace when they are shared by multiple workspaces.
+The workspace stores script descriptions/configurations and saved component
+folders in `.rppws`; script source can live in the project directory. Each
+component folder is self-contained and can be copied and registered/loaded in
+another workspace or runtime. It includes its description, Python parameter
+definition, local data, and concrete nested components. See
+[folder layout and component reuse](workspaces.md#workspace-and-rppws-folder-layout)
+and [Python parameters and YAML](workspaces.md#parameters-are-python-definitions).
+Keep source libraries outside the workspace when they are shared by multiple
+workspaces.
 
-## Run tests
+## Execute a saved configuration
 
-Python package tests are run from the relevant submodule with its normal test
-runner. C++ tests are configured by `colcon` and generate temporary RPP test
-data through `rpp_testing`:
+Build a `ComponentRuntime` from a saved component or a `ScriptRuntime` from a
+script's selected configuration. Construction prepares instances/transports;
+configure resources and activate native components explicitly before calling
+them. Close the runtime and check its result when finished.
 
-```bash
-colcon test --event-handlers console_direct+
-colcon test-result --verbose
-```
+See [managed lifecycle](runtime-lifecycle.md) for Python/C++ usage, slot
+permissions, switching, handover, and shutdown. The
+[workspace guide](workspaces.md) documents the configuration-based script format;
+the old top-level `Components` description format is unsupported.
+
+## Maintain an installation
+
+Use [registry migration](registry.md#upgrade-an-existing-registry) after updating
+the registrator and matching runtime artifacts. Refresh/reload are distinct:
+registration refresh updates generated artifacts, while runtime reload replaces
+a loaded instance using registered artifacts. ROS slot reload does not compile
+or refresh the registry.
+
+## Development checks
+
+Package checks use each implementation repository's CI and declared test
+extras. See [testing support](testing.md), the [test image](test-image.md), and
+[integration CI](integration.md) for fixtures and coordinated revision checks.

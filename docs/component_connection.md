@@ -1,263 +1,112 @@
 # Component connections
 
-RPP presents native and foreign-language subcomponents through the same
-component API. A component method is synchronous from plugin code:
+RPP uses generated plugin-type interfaces for native and adapted calls. Native
+components load directly in their language runtime. Foreign-language components
+run in a component-server process and communicate through Cap'n Proto RPC.
+A purely native tree creates no RPC executor or external process.
 
-```python
-result = component.validate(state)
-```
-
-The adapter hides RPC transport and language boundaries.
+Applications build [runtime handles](runtime-lifecycle.md); plugins receive a
+`ComponentContext`. Use the context's subcomponent APIs rather than the removed
+`ComponentContextBuilder` and `get_component()` examples.
 
 ## Calling components
 
-Use the same component object whether its implementation is native or runs in
-another language. The context builder and generated adapter select the required
-connection automatically.
-
-### Synchronous calls
-
-Use the regular method when the caller should wait for the result:
+For Python, access a named child's public view and instance:
 
 ```python
-controller = context.get_component("ctl_main")
-is_valid = controller.validate(state)
+child = runtime.get_context().get_subcomponent_context("processors", "primary")
+processor = child.get_instance()
+result = processor.process(3.0)
 ```
 
-The C++ component API is also synchronous by default:
+For native-only instance enumeration, Python also provides
+`get_subcomponent_instance()` and `enumerate_subcomponent_instances()`.
+These reject adapted children; a child view's `get_instance()` can expose its
+adapter. C++ uses `get_subcomponent<Type>(slot, name)` for typed access.
+List slots require the component name; single/optional slots can select their
+current entry when it is omitted.
 
-```cpp
-auto controller = context.get_component<MotionController2D>("ctl_main");
-const bool is_valid = controller->validate(state);
-```
-
-These calls work for native and foreign-language components. The adapter sends
-an RPC only when the component lives in another process.
-
-### Asynchronous calls
-
-Generated Python adapter clients provide an `_async` variant of each component
-method. Await it from an asyncio coroutine when other work can continue while
-the component responds:
+Generated adapter methods expose synchronous calls. Python adapter clients also
+provide `*_async` variants for use from asyncio:
 
 ```python
-controller = context.get_component("ctl_main")
-is_valid = await controller.validate_async(state)
+result = await processor.process_async(3.0)
 ```
 
-Independent calls can run concurrently:
+Independent adapter calls can be awaited with `asyncio.gather`. These asynchronous
+methods belong to generated adapters; do not assume every native implementation
+provides them. Keep guards and runtimes alive until awaited work completes.
+Use [guarded access](runtime-lifecycle.md#access-identity-and-guarded-calls) when
+calls may overlap lifecycle or membership changes.
 
-```python
-results = await asyncio.gather(
-    controller_a.validate_async(state),
-    controller_b.validate_async(state),
-)
+## External process ownership
+
+```mermaid
+flowchart LR
+    Runtime[Owning runtime / component tree] --> Client[Generated adapter client]
+    Runtime --> Process[ExternalComponentProcess]
+    Process --> Transport[Runtime connection and call executor]
+    Client <-->|Cap'n Proto RPC| Server[Component server / generated adapter server]
+    Server --> Plugin[Hosted native plugin subtree]
 ```
 
-For C++, schedule the plugin call on a `ComponentCallExecutor`. The executor
-runs the lambda on its dedicated KJ event-loop thread:
+At the first foreign-language child, construction creates an adapter boundary
+and stops local descendant traversal. The external host constructs and owns
+that child's complete subtree. It can recursively start another language host
+for its own foreign descendants.
 
-```cpp
-rpp::ComponentCallExecutor executor;
-executor.start();
+`ExternalComponentProcessRegistry` maps languages to server commands. Builders
+allow custom commands through `register_external_component_server()`. A process
+owns its subprocess, transport connection, adapter connections, and call executor;
+a connection alone does not own the component tree or subprocess. Shared hosts
+stay alive until their final owning runtime releases them.
 
-const bool is_valid = executor.call([&](kj::AsyncIoContext&) {
-    return controller->validate(state);
-});
+`ComponentCallExecutor` provides a dedicated transport event loop. Synchronous
+adapter methods submit request/send/wait work to that executor and return the
+result to the caller. This keeps a component server's event loop available for
+responses to nested calls. Do not synchronously call through the executor from
+its own worker thread. C++ low-level `executor.call(lambda)` schedules work on
+its KJ loop and waits for its result; it is not a nonblocking application future.
 
-executor.stop();
-```
+The component servers expose the shared `PluginRuntime` wire interface. C++'s
+control endpoint is implemented by `RpcControlService`/`RpcControlClient`,
+separately from application runtime ownership. Construction prepares transports
+and starts servers with unconfigured roots; it does not activate plugins.
 
-`call()` schedules the work asynchronously on the executor thread and waits
-for the lambda result before returning it to the caller. This lets the server
-event loop remain available to receive RPC responses.
+## Lifecycle across the boundary
 
-## Important components
+Remote configure/cleanup execute in the hosting process and report their result
+to the caller. Native activation/deactivation and typed handover are supported;
+adapted activation/deactivation and typed handover remain unsupported.
+Applications and hosts must use matching generated protocol versions.
 
-| Component | Responsibility |
-| --- | --- |
-| `ComponentContextBuilder` | Builds native components locally and groups foreign-language components into external runtime processes. It stops traversing a subtree at the first foreign-language component; that server then builds the remainder of the subtree. |
-| `ExternalComponentProcessRegistry` | Maps a source language to the server factory/command that can host it. The default registrations are Python and C++. |
-| `ExternalComponentProcess` | Owns one external server process, its runtime connection, adapter clients, and its dedicated call executor. Multiple components of the same foreign language can share one process where supported. |
-| `CppExternalComponentProcess` | Python's C++-specific external-process implementation. It resolves `rpp_component_server_cpp` directly, then uses `RPP_CPP_CORE_PATH` when ROS 2 compilation is enabled. |
-| `rpp_component_server_python` / `rpp_component_server_cpp` | Build the component roots passed on their command line, expose their adapters through a `PluginRuntime` endpoint, and own all descendants of those roots. |
-| `RppRuntimeClientContext` | Owns the transport connection to a server's `PluginRuntime` endpoint. It resolves an adapter capability by connection name; it does not own the component tree or child process. |
-| Generated adapter clients and servers | Translate typed component calls to and from Cap'n Proto RPC. Client adapters are injected into the parent context; server adapters expose native instances from the external process. |
-| `ComponentCallExecutor` | Runs transport work on a dedicated event loop, allowing component methods to remain synchronous without blocking a server callback's event loop. |
+The ordinary deployment path uses local component-server processes. Treat
+remote-machine placement as planned rather than a documented deployment feature.
 
-## Building scripts
+## C++ RPC result lifetime
 
-Both language builders expose the same script entry points:
+Generated C++ results retain their original response through shared ownership.
+Struct, list, and Data views, including nested views and `Const::shallow_copy()`,
+share that owner. Retaining a response moves its handle without cloning its
+payload; scalar results remain ordinary values.
 
-```cpp
-context_builder.build_script_from_path(script_path);
-context_builder.build_script_from_library(library_name, script_name);
-```
+Release every returned view before closing its runtime, client context, or
+executor. Executor-managed views may be released on the application thread;
+final destruction is queued onto the existing RPC worker. Direct clients without
+an executor release views on their original RPC thread before closing that
+thread's event loop. Converting a view to a raw Cap'n Proto reader does not
+transfer ownership; retain the RPP view while using that reader.
 
-Both accept an optional configuration. `build_script_from_path` finds the
-nearest `.rppws/script_descriptions/<script-stem>.json`; the library form
-searches the configured workspace's `script_descriptions` directory by its
-`ScriptLibrary` and `ScriptName` metadata.
+Regenerate affected wrappers/adapters and rebuild dependent C++ code to acquire
+these lifetime rules. Older generated code retains its previous behavior.
 
-## Language boundary
+## Shutdown
 
-A context builder traverses components implemented in its own language. At the
-first component implemented in another language, it creates an adapter root and
-does not traverse its descendants. The external component server owns and
-builds that complete subtree.
+Explicitly close the runtime and check the lifecycle result. Owned adapter
+capabilities must be released before their transport event loop is destroyed.
+External-process shutdown requests remote shutdown and releases connections
+before stopping the executor, then waits for the server before terminating it
+if needed. Each server owns cleanup of its descendants.
 
-## Advanced: client-server ownership model
-
-The ownership boundary is the external process, not the adapter and not the
-runtime connection. A parent context owns an adapted child context; that child
-context owns the adapter instance and a shared `ExternalComponentProcess`.
-The process owns the server process and the transport resources used to reach
-it.
-
-```text
-Parent ComponentContext
-├── native component instance
-└── adapted child ComponentContext
-    ├── generated adapter client / plugin instance
-    └── ExternalComponentProcess
-        ├── component-server child process
-        ├── RppRuntimeClientContext
-        ├── PluginRuntime client
-        ├── adapter-client connections
-        └── ComponentCallExecutor + transport event loop
-```
-
-The external component server owns the other side of that boundary:
-
-```text
-component-server process
-├── ComponentContextBuilder
-├── complete component subtree rooted at its command-line components
-├── native component instances and their subcontexts
-├── generated adapter servers
-└── RppServerHost / PluginRuntime endpoint
-```
-
-This model composes recursively. For example, a Python component can own a C++
-child server, and that C++ server can own a Python child server. Each process
-only owns its direct foreign-language server; each launched server owns the
-rest of its own subtree.
-
-### Construction and calls
-
-For each foreign-language component process:
-
-1. The host-language process starts the target-language component server.
-2. A client connection is created to that server's PluginRuntime endpoint.
-3. Adapter clients resolve their component capability by connection name.
-4. Calls to the adapter are sent over that connection.
-
-`RppRuntimeClientContext` owns a client runtime connection and its start/stop
-lifecycle.
-It is not responsible for component-tree construction or process ownership.
-
-### Synchronous component calls
-
-RPC transports require an event loop, but a component method may be called from
-within a server callback. Blocking that server's event loop while waiting for a
-child RPC response would deadlock or cause a re-entrant event-loop error.
-
-Each external component process therefore owns a dedicated call executor with a
-separate transport event loop:
-
-```text
-component method (caller thread)
-    -> call executor (transport loop thread)
-        -> adapter client RPC
-            -> external component server
-```
-
-The caller blocks on the executor result while the transport loop remains free
-to receive the response. This preserves one synchronous public component API
-for native and adapted components.
-
-### Asynchronous component calls
-
-Generated Python adapter clients also expose an asynchronous variant of every
-component method. The method name has an `_async` suffix and can be awaited
-from an asyncio coroutine:
-
-```python
-async def validate_children(context, state):
-    controller = context.get_component("ctl_main")
-    is_valid = await controller.validate_async(state)
-    return is_valid
-```
-
-For several independent foreign-language components, start the calls together
-and await them as a group:
-
-```python
-results = await asyncio.gather(
-    controller_a.validate_async(state),
-    controller_b.validate_async(state),
-)
-```
-
-The synchronous method, such as `controller.validate(state)`, blocks the
-calling thread until the response arrives. The `_async` form submits the same
-transport operation to the component call executor and returns an awaitable,
-leaving the caller's asyncio loop free to perform other work. Both forms use
-the same connection and return the same declared result value.
-
-Use the synchronous form for ordinary plugin methods that expose a synchronous
-API. Use `_async` inside application-level asyncio code or when multiple
-independent component requests can proceed concurrently. Do not call the
-synchronous form from the component call executor's own worker thread.
-
-### C++ scheduled component calls
-
-`ComponentCallExecutor::call()` schedules the supplied lambda on its dedicated
-KJ event-loop thread. It then waits for the lambda result on the caller thread.
-Use it when a plugin function must run away from the current server event loop;
-the server event loop remains able to process RPC traffic while the scheduled
-call executes.
-
-For native components, or adapters without an external executor, the generated
-method performs the same request directly on its available KJ context.
-
-### Python ownership
-
-`ExternalComponentProcess` owns:
-
-- the external subprocess;
-- `RppRuntimeClientContext`;
-- `ComponentCallExecutor`.
-
-It starts the client context and connects adapter clients on the executor loop.
-Generated Python adapter clients receive that executor internally. Their public
-methods synchronously return declared result values; generated `*_async`
-methods are transport-level implementations.
-
-`CppExternalComponentProcess` specializes only how the C++ server command is
-located. Once started, it has the same ownership and lifecycle contract as any
-other Python external process.
-
-### C++ ownership
-
-`ExternalComponentProcess` owns:
-
-- the external subprocess;
-- `RppRuntimeClientContext` and adapter clients used on that worker thread.
-- `ComponentCallExecutor` with a dedicated KJ event-loop thread;
-
-Generated C++ adapter methods execute request/send/wait operations through the
-executor. They must not wait on `RppServerHost`'s server event loop.
-
-### Shutdown order
-
-Stopping a component context first releases the adapter instances that hold RPC
-capabilities. The external runtime then requests remote `PluginRuntime`
-shutdown, disconnects its adapter clients, releases the client context, and
-stops its transport executor. It waits briefly for the server to exit cleanly
-before terminating it if necessary.
-
-This order is important for both implementations: all adapters and Cap'n Proto
-capabilities must be released before the corresponding event loop is destroyed.
-It also gives a nested Python or C++ server time to run its own shutdown path
-and stop its descendants, preventing orphaned server processes.
+See [C++ construction and ownership](cpp-context-flow.md) and
+[registry compatibility](registry.md#generated-code-compatibility) for details.

@@ -25,10 +25,24 @@ rpp --rpp-home ./demo-home init-home
 rpp --rpp-home ./demo-home registry list --json
 ```
 
-`init-home` initializes the home layout; `--override` rebuilds generated
-registry/interface state, and `--init-anot-only` initializes only the annotation
-schema. `pm` launches the plugin manager. `ws` without a subcommand launches
-the workspace GUI, optionally at `--root`.
+`init-home` initializes the home layout; `--override` deletes and recreates
+generated state and installed library registrations. Use migration when upgrading
+an existing home. `--init-anot-only` initializes only the annotation schema.
+`pm` launches the plugin manager. `ws` without a subcommand launches the
+workspace GUI, optionally at `--root`.
+
+## Registry migration
+
+```text
+rpp registry migrate [--dry-run] [--no-restore]
+```
+
+After updating packages and the native runtime, stop applications using generated
+interfaces, preview with `--dry-run`, then migrate. Migration backs up the home,
+regenerates bundled libraries, and refreshes registered user libraries in dependency
+order. Failure restores generated state unless `--no-restore` is supplied; the
+backup is retained in both modes. See [registry upgrades](registry.md#upgrade-an-existing-registry)
+for prerequisites and recovery.
 
 ## Registry inspection and settings
 
@@ -47,14 +61,18 @@ selects implementations. `info` reads a registered plugin-type record, using
 its qualified name rather than an internal ID. Use the library commands below
 to inspect a plugin implementation.
 
-Setting names are uppercase. The supported settings are `USE_ROS2_COMPILATION`
-and `RPP_CPP_CORE_PATH`:
+Setting names are uppercase. The supported settings are `USE_ROS2_COMPILATION`,
+`RPP_CPP_CORE_PATH`, and `BUILD_TYPE` (default `RelWithDebInfo`):
 
 ```bash
+rpp registry config set BUILD_TYPE RelWithDebInfo
 rpp registry config get USE_ROS2_COMPILATION
 rpp registry config set USE_ROS2_COMPILATION false
 rpp registry config set RPP_CPP_CORE_PATH /absolute/path/to/build/rpp_cpp
 ```
+
+See [registration profiles](registry.md#c-registration-profiles) for Debug,
+Release, and RelWithDebInfo behavior and GUI overrides.
 
 ## Libraries, plugins, and plugin types
 

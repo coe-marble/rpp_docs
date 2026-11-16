@@ -1,68 +1,65 @@
 # System architecture
 
-RPP separates **discovery**, **composition**, and **execution**. The
-repositories are independent, but they share a small set of contracts and a
-common registry/home directory.
-
-## Design goals
+RPP separates contracts, registration, composition, and managed execution.
+Independent repositories share generated interfaces and a configurable registry
+home. Libraries own source, the home owns registration/generated artifacts,
+and workspaces own saved component configuration and script assignments.
 
 ```mermaid
 flowchart TD
-    User[Developer or operator] --> CLI[rpp CLI]
-    User --> PM[Plugin Manager GUI]
-    User --> WS[Workspace GUI]
+    User[Application or developer] --> CLI[rpp CLI / GUIs]
     CLI --> Registry[rpp_plugin_registrator]
-    PM --> Registry
-    WS --> Orchestrator[rpp_orchestrator]
-    Orchestrator --> Registry
-    Registry --> Home[~/.rpp registry, descriptions, interfaces]
-    Orchestrator --> Runtime[Python or C++ runtime]
-    Runtime --> Plugin[Plugin implementation]
+    CLI --> Workspace[rpp_orchestrator]
     Common[rpp_common contracts] --> Registry
-    Common --> Runtime
+    Registry --> Home[RPP_HOME: metadata and generated artifacts]
+    Workspace --> Saved[Workspace .rppws: configurations and parts]
+    Home --> Builder[ComponentRuntimeBuilder]
+    Saved --> Builder
+    Builder --> Runtime[ComponentRuntime / ScriptRuntime]
+    Runtime --> Slots[Managed component slots]
+    Slots --> Native[Native plugin instances]
+    Slots --> Adapter[Adapter and external component process]
+    Adapter --> Hosted[Hosted plugin subtree]
+    ROS[rpp_ros2 services and status] --> Runtime
 ```
 
-## Layers
+## Responsibilities
 
-### Contracts: `rpp_common`
+| Layer | Owner | Responsibility |
+| --- | --- | --- |
+| Contracts | `rpp_common` | Schemas, data models, parameter declarations |
+| Registration | `rpp_plugin_registrator` | Library discovery, descriptions, validation, generated interfaces/adapters |
+| Composition | `rpp_orchestrator` | Saved components, parameters, script configurations, workspace GUI |
+| Execution | `rpp_py`, `rpp_cpp` | Runtime construction, slot lifecycle, native loading and external hosts |
+| Commands | `rpp_cli` | Registry/library/workspace commands and GUI launchers |
+| ROS integration | `rpp_ros2` | Per-slot service commands and status snapshots over ROS 2 |
+| Examples and measurements | `rpp_demos` | Runnable tutorial and benchmark sources |
+| Verification support | `rpp_testing` | Shared fixtures, example plugins and mock workspaces |
 
-Common plugin types, message/data definitions, and plugin description models
-define what an implementation must provide.
+## From source to a running component
 
-### Discovery and registration: `rpp_plugin_registrator`
+1. Define an annotated Cap'n Proto plugin type inside a library.
+2. Implement it in Python or C++ and declare its sources in `plugins.json`.
+3. Register the library to validate metadata and generate language artifacts.
+4. Create a saved workspace component with parameters and subcomponent assignments.
+5. Build a runtime from the saved component or a script configuration.
+6. Configure resources, then activate the desired native components explicitly.
+7. Call the plugin contract from the application's own loop and close the runtime
+   deterministically when done.
 
-The registrator parses plugin and plugin-type source, validates it, stores
-descriptions, registers libraries and plugins, and generates language-specific
-interfaces. Its default state is under `~/.rpp`.
+A component root has a fixed owning slot. A script directly owns its slot
+collection and has no plugin instance. Slot managers validate transitions and
+administer membership. Applications use runtime handles; plugins receive
+contexts for services and child access. Composite plugins decide how ordinary
+activation/deactivation propagates to their children; full shutdown stops
+remaining descendants explicitly.
 
-### Composition: `rpp_orchestrator`
+Purely native trees need no RPC infrastructure. Foreign-language boundaries
+create adapter roots hosted by external processes, each owning its subtree.
+Remote configure/cleanup is supported; adapted activation/deactivation and typed
+handover remain pending. See [runtime lifecycle](runtime-lifecycle.md) and
+[connections](component_connection.md) for current boundaries.
 
-The orchestrator creates workspaces, stores component records and parameters,
-assigns subcomponents, manages scripts, and exposes the workspace GUI. A
-workspace is identified by its `.rppws` directory.
-
-### Execution: `rpp_py` and `rpp_cpp`
-
-The runtime loads a registered implementation, creates the plugin instance,
-and connects it to the generated adapter/interface for its plugin type. Python
-loads source modules directly; C++ builds a shared runtime and component
-server.
-
-### Integration and verification: `rpp_cli` and `rpp_testing`
-
-`rpp_cli` presents the common operations as commands. `rpp_testing` supplies
-fixtures, test plugins, test libraries, and mock workspaces so the other layers
-can be tested without application-specific repositories.
-
-## Runtime data flow
-
-1. A plugin type is defined in a contract source file.
-2. A plugin implementation is described and validated.
-3. The library manager records the plugin and its source in the registry.
-4. An interface is generated for the target language when the runtime needs one.
-5. A workspace component references the registered plugin by name.
-6. The Python or C++ runtime resolves the library path, loads the implementation, and creates the instance.
-7. The component server executes the instance and exchanges typed data through the generated adapter and transport.
-
-The registry is metadata, not the implementation itself. Source files remain in
-libraries; workspace records refer to registered plugin identities.
+The ROS helper calls public runtime operations and preserves slot permissions.
+It does not replace application ownership of root configuration, lifecycle safe
+points, or shutdown. RPP component states are distinct from ROS node lifecycle.
