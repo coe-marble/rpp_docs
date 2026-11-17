@@ -6,7 +6,7 @@ submodule `rpp_docs`. The implementation inventory is declared in
 
 | Repository | Responsibility | Documentation |
 | --- | --- | --- |
-| `rpp_cli` | Registry, library, workspace and component commands | [CLI](cli.md) |
+| `rpp_cli` | Registry, library, workspace and [component][glossary-component] commands | [CLI](cli.md) |
 | `rpp_common` | Shared schemas, data models, parameter declarations | [Contracts](plugins-and-plugin-types.md) |
 | `rpp_orchestrator` | Saved components, script configurations and workspace GUI | [Workspaces](workspaces.md) |
 | `rpp_plugin_registrator` | Metadata, validation, registration and code generation | [Registry](registry.md) |
@@ -22,3 +22,5 @@ API comments stay beside their implementation. User and developer guides,
 walkthroughs, setup instructions, and design history are maintained in `rpp_docs`.
 
 The [integration guide](integration.md) explains pinned revisions and CI.
+
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

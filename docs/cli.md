@@ -1,7 +1,7 @@
 # RPP CLI
 
-The `rpp` executable is installed by `rpp_cli`. It manages libraries, plugin
-registrations, workspaces, scripts, components, and test fixtures.
+The `rpp` executable is installed by `rpp_cli`. It manages libraries, [plugin][glossary-plugin]
+registrations, workspaces, scripts, [components][glossary-component], and test fixtures.
 
 Run commands from the shell where RPP is installed. Paths are relative to the
 current directory unless otherwise stated. Use `rpp --help` or append `--help`
@@ -28,7 +28,7 @@ rpp --rpp-home ./demo-home registry list --json
 `init-home` initializes the home layout; `--override` deletes and recreates
 generated state and installed library registrations. Use migration when upgrading
 an existing home. `--init-anot-only` initializes only the annotation schema.
-`pm` launches the plugin manager. `ws` without a subcommand launches the
+`pm` launches the [plugin][glossary-plugin] manager. `ws` without a subcommand launches the
 workspace GUI, optionally at `--root`.
 
 ## Registry migration
@@ -55,8 +55,8 @@ rpp registry config get SETTING_NAME
 rpp registry config set SETTING_NAME VALUE
 ```
 
-`describe` prints parsed metadata and validation results for Python/C++ plugins
-or Cap'n Proto plugin types. `list` shows plugin types by default; `--plugins`
+`describe` prints parsed metadata and validation results for Python/C++ [plugins][glossary-plugin]
+or Cap'n Proto [plugin types][glossary-plugin-type]. `list` shows plugin types by default; `--plugins`
 selects implementations. `info` reads a registered plugin-type record, using
 its qualified name rather than an internal ID. Use the library commands below
 to inspect a plugin implementation.
@@ -105,8 +105,8 @@ For an existing library, `register` copies it into the home by default.
 `--link` keeps it at its current location. `unregister` removes that managed
 copy or link; the external source of a linked library is retained.
 
-Named library operations select plugin implementations by default. `--type`
-selects plugin types; `register --type` accepts a Cap'n Proto source file.
+Named library operations select [plugin][glossary-plugin] implementations by default. `--type`
+selects [plugin types][glossary-plugin-type]; `register --type` accepts a Cap'n Proto source file.
 `--override` applies to plugin-type registration. Registering an existing
 implementation updates its metadata. Plugin sources must be inside their
 library, normally under `plugins`; type sources belong under `plugin_types`.
@@ -144,7 +144,7 @@ registered library name containing `.rppws`. Where optional, `WORKSPACE`
 defaults to the current directory.
 
 `ws list` discovers registered libraries that contain workspaces and displays
-their script references. `ws info` describes one workspace and its components.
+their script references. `ws info` describes one workspace and its [components][glossary-component].
 Script references may be displayed names, filenames, or paths; ambiguous names
 are rejected. Quote names containing spaces.
 
@@ -169,7 +169,7 @@ rpp ws script config import WORKSPACE SOURCE_WORKSPACE::SCRIPT CONFIGURATION
 ```
 
 New scripts start with a `Default` configuration. `copy` duplicates assignments
-within the same script; it does not copy component instances. `import` copies
+within the same script; it does not copy [component][glossary-component] instances. `import` copies
 the source configuration and its component trees into the target workspace,
 giving the copied components new IDs. First link the source script into the
 target using its reference from `ws list`:
@@ -202,7 +202,7 @@ rpp ws component parameter set WORKSPACE COMPONENT PARAMETER VALUE
 rpp ws component context WORKSPACE COMPONENT
 ```
 
-`COMPONENT` and `PARENT` accept component names or IDs from `component list`.
+`COMPONENT` and `PARENT` accept [component][glossary-component] names or IDs from `component list`.
 Script assignments use the active configuration unless `--configuration` is
 specified. Subcomponent commands operate on a particular parent's slot.
 `context` prints the component, descriptor, and parameter-source paths as JSON.
@@ -231,14 +231,14 @@ rpp completion [--shell bash]
 
 `compile` currently compiles `.cpp` and `.hpp` implementations into a temporary
 shared library for diagnostics; it does not install the result. It attempts to
-infer the plugin type unless `--plugin-type-name` is supplied. Compiler failures
+infer the [plugin type][glossary-plugin-type] unless `--plugin-type-name` is supplied. Compiler failures
 print diagnostics to standard error and return exit code 1; success returns 0. The
 `--type plugin-type` branch currently checks the source extension and reports
 it; it does not invoke interface generation. Register a type through
 `library LIBRARY register SOURCE --type` to generate its interfaces.
 
 The test command creates RPP fixtures from `rpp_testing` and prints their paths
-and plugin metadata as JSON. An explicit output directory must already exist.
+and [plugin][glossary-plugin] metadata as JSON. An explicit output directory must already exist.
 This command prepares fixtures; it does not run pytest.
 
 Only Bash completion is supported. Enable it in the current Bash shell with:
@@ -246,3 +246,7 @@ Only Bash completion is supported. Enable it in the current Bash shell with:
 ```bash
 eval "$(rpp completion --shell bash)"
 ```
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

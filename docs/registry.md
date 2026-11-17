@@ -1,6 +1,6 @@
 # Registry, registration, and upgrades
 
-`rpp_plugin_registrator` discovers annotated plugin types, validates Python/C++
+`rpp_plugin_registrator` discovers annotated [plugin types][glossary-plugin-type], validates Python/C++
 implementations, records library metadata, and generates interfaces and adapters.
 Use the public `rpp` [CLI](cli.md) and `LibraryManager` API. The old standalone
 `rpp_registrator.py` command examples are superseded by these interfaces.
@@ -16,19 +16,19 @@ use a fresh process when changing homes.
 | `config.json` | Registry settings |
 | `.initialized` | Initialization marker |
 | `libraries/` | Managed copies or links to registered source libraries |
-| `registry/rpp_plugin_types.json` | Plugin-type index |
+| `registry/rpp_plugin_types.json` | [Plugin-type][glossary-plugin-type] index |
 | `registry/libraries/<library>/manifest.json` | Library registration metadata |
 | `registry/libraries/<library>/rpp_plugins/` | Implementation descriptions |
 | `registry/libraries/<library>/rpp_plugin_types/` | Type descriptions |
 | `registry/capnp/` | Registered schemas |
-| `registry/cpp/shared/` | Compiled plugin and plugin-type libraries |
+| `registry/cpp/shared/` | Compiled [plugin][glossary-plugin] and plugin-type libraries |
 | `interfaces/` | Generated language interfaces and adapters |
 
 Library `package.json` (or `package.xml`) supplies package metadata;
 `plugins.json` declares type sources, implementation sources, and dependencies.
 Keep declared source paths relative to the library. A linked registration keeps
 sources in their checkout; a copied registration owns its managed copy.
-Workspace settings and saved component identity are separate from registration.
+Workspace settings and saved [component][glossary-component] identity are separate from registration.
 
 ```bash
 rpp library register /path/to/my_library --link
@@ -63,7 +63,7 @@ refreshing to use a new profile.
 Debug and RelWithDebInfo validation binaries retain symbols for GDB metadata
 extraction and can be reused for registration. Release uses a separate debug
 validation build, then compiles the installed optimized binary. The GDB helper
-remains an unoptimized debug build. Plugin types use the requested profile.
+remains an unoptimized debug build. [Plugin types][glossary-plugin-type] use the requested profile.
 
 API calls can select a profile without changing the global setting:
 
@@ -72,7 +72,7 @@ manager.refresh_plugin_library("my_library", build_type="Debug")
 manager.register_plugin_from_source(source_path, "my_library", build_type="Release")
 ```
 
-In the plugin manager GUI, **Register in Debug** selects the requested mode for
+In the [plugin][glossary-plugin] manager GUI, **Register in Debug** selects the requested mode for
 registration/refresh. Unchecked selects Release, independently of the global
 RelWithDebInfo default. The read-only **Debug** column reports the recorded
 mode, with older untracked modes shown as Unknown in its tooltip. Worker-based
@@ -81,7 +81,7 @@ registration keeps logs available; build failures retain diagnostic details.
 ## Upgrade an existing registry
 
 After installing matching updated packages and rebuilding the native runtime,
-stop plugin managers and applications using generated interfaces. Preview the
+stop [plugin][glossary-plugin] managers and applications using generated interfaces. Preview the
 migration, then apply it:
 
 ```bash
@@ -133,3 +133,7 @@ for shutdown and thread-affinity requirements.
 Source references: [registry paths and settings](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/registry_config.py),
 [library manager](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/library_manager.py),
 and [C++ registration profiles](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/plugin_registrator/cpp.py).
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

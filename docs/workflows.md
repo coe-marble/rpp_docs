@@ -1,6 +1,6 @@
 # Core workflows
 
-This page describes the main RPP workflows for libraries, plugins, interfaces, components, and workspaces. It is not a complete reference for every command; see [CLI](cli.md) for the full command set.
+This page describes the main RPP workflows for libraries, [plugins][glossary-plugin], interfaces, [components][glossary-component], and workspaces. It is not a complete reference for every command; see [CLI](cli.md) for the full command set.
 
 # Using libraries
 
@@ -26,7 +26,7 @@ rpp library create my_library --path ../libraries
 `create --path` creates and links the library in that directory. To register
 an existing library there, use `rpp library register ../libraries/my_library --link`
 instead. The `--link` option keeps the library at its original path. This is useful
-during development because changes to plugin source and `plugins.json` remain
+during development because changes to [plugin][glossary-plugin] source and `plugins.json` remain
 in the working library. A copied registration can be used when the library
 should be managed independently of its original checkout.
 
@@ -61,7 +61,7 @@ development. A copied registration is preferable for a relocatable library
 bundle.
 
 Every library contains a `plugins.json` file. Its `Plugins` array declares
-concrete plugin implementations, while its `PluginTypes` array declares the
+concrete [plugin][glossary-plugin] implementations, while its `PluginTypes` array declares the
 Cap'n Proto files containing plugin interfaces.
 
 ## Describe and register a plugin
@@ -73,13 +73,13 @@ rpp registry describe path/to/plugin.py
 rpp library my_library register path/to/plugin.py
 ```
 
-Registration creates or updates plugin metadata and makes the plugin available
-to workspace component creation. The registry uses plugin identity as its
+Registration creates or updates [plugin][glossary-plugin] metadata and makes the plugin available
+to workspace [component][glossary-component] creation. The registry uses plugin identity as its
 upsert key, so registering the same identity updates the existing record.
 
 ## Generate an interface
 
-Interfaces are generated from plugin type metadata rather than handwritten per
+Interfaces are generated from [plugin type][glossary-plugin-type] metadata rather than handwritten per
 language:
 
 The interface generator is owned by `rpp_plugin_registrator`. Register the
@@ -93,7 +93,7 @@ The source must be inside the library. Use `--override` when replacing an
 already registered type.
 
 Generated interfaces live under `~/.rpp/interfaces` by default and must be
-available to the runtime that loads the corresponding plugin. Registration can
+available to the runtime that loads the corresponding [plugin][glossary-plugin]. Registration can
 compile native artifacts; see [profiles and compatibility](registry.md).
 
 ## Compose a workspace
@@ -104,7 +104,7 @@ rpp ws create demo
 rpp ws --root <path-to-demo-library>
 ```
 
-The workspace stores script descriptions/configurations and saved component
+The workspace stores script descriptions/configurations and saved [component][glossary-component]
 folders in `.rppws`; script source can live in the project directory. Each
 component folder is self-contained and can be copied and registered/loaded in
 another workspace or runtime. It includes its description, Python parameter
@@ -116,7 +116,7 @@ workspaces.
 
 ## Execute a saved configuration
 
-Build a `ComponentRuntime` from a saved component or a `ScriptRuntime` from a
+Build a `ComponentRuntime` from a saved [component][glossary-component] or a `ScriptRuntime` from a
 script's selected configuration. Construction prepares instances/transports;
 configure resources and activate native components explicitly before calling
 them. Close the runtime and check its result when finished.
@@ -139,3 +139,7 @@ or refresh the registry.
 Package checks use each implementation repository's CI and declared test
 extras. See [testing support](testing.md), the [test image](test-image.md), and
 [integration CI](integration.md) for fixtures and coordinated revision checks.
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

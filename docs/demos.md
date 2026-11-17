@@ -7,11 +7,11 @@ under ROS 2 and demonstrate RPP lifecycle management through `rpp_ros2`.
 Reuse the existing localization contracts and implementations from
 `rpp_localization`; keep algorithm implementation in that library.
 
-Run EKF and UKF as separately configured components with the same input stream
+Run EKF and UKF as separately configured [components][glossary-component] with the same input stream
 and distinct estimate topics. Demonstrate independent activation and
 deactivation, reactivation, and cleanup. Stopping one algorithm should leave
 the other running. State explicitly whether reactivation resets or retains its
-estimate, according to the selected plugin's behavior.
+estimate, according to the selected [plugin][glossary-plugin]'s behavior.
 
 The demo will own launch files, workspace configuration, deterministic sample
 inputs, ROS CLI examples, and expected observations. `rpp_ros2` will own the
@@ -23,3 +23,6 @@ available `rpp_ros2` API before fixing endpoint names or message types.
 Use `ros2 topic` to inspect data and state and the bridge's supported CLI
 command path to request transitions. Explain the relationship between RPP
 component state and any ROS node lifecycle; avoid assuming they are identical.
+
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

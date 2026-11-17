@@ -1,6 +1,6 @@
 # C++ runtime
 
-`rpp_cpp` provides the C++ plugin runtime and the C++ component server.
+`rpp_cpp` provides the C++ [plugin][glossary-plugin] runtime and the C++ [component][glossary-component] server.
 
 Generated C++ RPC results retain their original response through shared
 ownership. Struct, list, and data views share that owner, including nested
@@ -83,7 +83,7 @@ and `colcon` workflow. ROS 2 logging is selected only when CMake finds
 ## Runtime, plugin context, and managed slots
 
 `SlotManager` is the only manager type. Each single/option/list slot owns one.
-A root component lives in a fixed single slot; a script directly owns its slot
+A root [component][glossary-component] lives in a fixed single slot; a script directly owns its slot
 collection and has no coordinating manager or artificial component entry.
 
 `ComponentRuntimeBuilder` uses `ComponentConstructor` to resolve descriptions,
@@ -97,7 +97,7 @@ and subcomponent access. The context refers non-owningly to its component data;
 a component entry records its owning slot and registration name for lifecycle calls.
 `SubcomponentContext` exposes control, identity and instance access for one subcomponent.
 
-A plugin cannot load, unload or switch itself in its owning slot. Its context only
+A [plugin][glossary-plugin] cannot load, unload or switch itself in its owning slot. Its context only
 exposes its own services, deferred self-deactivation and its subcomponent slots.
 Membership changes belong to the parent/application controlling that slot.
 Moving a runtime preserves its component data and context addresses.
@@ -167,7 +167,7 @@ const runtime handles, including inactive entries, and return `CallbackResult`.
 Inspect services and parameters through each handle's `get_context()`.
 Validators inspect parameters/metadata and must not execute lifecycle operations.
 Supply initial validators with `ComponentRuntimeBuilder::RegistrationValidators`,
-keyed by slot plugin type and then the name of the component being registered.
+keyed by slot [plugin type][glossary-plugin-type] and then the name of the component being registered.
 For example, `validators["controllers::Controller"]["surge_controller"]` applies
 to that candidate in any slot of this type, including `List` and `Option` slots.
 Initial names use the workspace component name; empty names are rejected on
@@ -229,8 +229,8 @@ unsupported; remote configure/cleanup is already implemented.
 
 ## Component instance identity
 
-Each component has an opaque UUID `instance_id`, available through
-`runtime.get_context().get_instance_id()` or its plugin context, and in
+Each [component][glossary-component] has an opaque UUID `instance_id`, available through
+`runtime.get_context().get_instance_id()` or its [plugin][glossary-plugin] context, and in
 `runtime.get_subcomponent_statuses(slot)` metadata. This is
 the identity of the loaded instance, separate from the configured component path
 and the slot-local registration name. Configure, activate, deactivate, cleanup,
@@ -257,7 +257,7 @@ rpp::ConcurrentComponentRuntimeBuilder concurrent_builder(data_manager);
 auto concurrent_runtime = concurrent_builder.build_component_from_path(component_path);
 ```
 
-Component and script roots use distinct runtime aliases:
+[Component][glossary-component] and script roots use distinct runtime aliases:
 
 ```cpp
 rpp::ComponentRuntime<>              // single-threaded component root
@@ -286,7 +286,7 @@ competing lifecycle threads; there is no thread-ID tracking or owner-thread dete
 Each concurrent slot has one mutex and condition variable. The gate protects registry
 snapshots, guarded-call admission, and per-entry call counts. Deactivation closes
 admission and waits for those counts to reach zero. Waiting releases the mutex;
-plugin callbacks and component construction also execute with the gate unlocked. There are no
+[plugin][glossary-plugin] callbacks and component construction also execute with the gate unlocked. There are no
 runtime lifecycle locks, manager mutation locks, or per-entry mutexes.
 
 Direct plugin pointers remain callable while inactive. The plugin owns its state,
@@ -318,7 +318,7 @@ are synchronous and return the actual outcome. The manager validates transitions
 `is_active()` is only an observation. In concurrent mode, subcomponent
 deactivation closes admission and waits for existing guarded calls to finish.
 
-The plugin's own `ComponentContext` exposes services and `is_active()`, but has no
+The [plugin][glossary-plugin]'s own `ComponentContext` exposes services and `is_active()`, but has no
 synchronous self-activation/deactivation methods. Instead a plugin can record its
 intent to deactivate without stopping itself while its callback is executing:
 
@@ -327,7 +327,7 @@ intent to deactivate without stopping itself while its callback is executing:
 context_->request_deactivation().require_success();
 ```
 
-This sets one pending flag in manager-owned component data. Success means recorded, not deactivated.
+This sets one pending flag in manager-owned [component][glossary-component] data. Success means recorded, not deactivated.
 The application processes the tree at a safe point on its lifecycle thread:
 
 ```cpp
@@ -353,3 +353,7 @@ view to the destination and transfer subcomponent-slot managers with their views
 Retained subcomponent views keep only the self view alive and reject access after runtime
 release; reloading creates a new view. Old runtime references cannot transition a
 replacement registered under the same name.
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

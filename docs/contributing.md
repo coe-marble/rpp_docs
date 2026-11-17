@@ -17,10 +17,32 @@ Implementation repositories keep concise README entry points linking here.
 
 ## Links and commands
 
-Relative links work in the `rpp_dev/rpp_docs` integration layout, including links
-into sibling source repositories. Package READMEs also provide a GitHub docs link
-for readers browsing a source repository on its own. Preserve old guide paths
-as short pointers when useful for existing links.
+Use relative links between pages in this repository. For files in another
+repository, link to that repository's actual GitHub URL and branch so the links
+also work when browsing `rpp_docs` on its own. Preserve old guide paths as short
+pointers when useful for existing links.
+
+## Glossary links
+
+Link the first prose mention of [Plugin Type][glossary-plugin-type], [Plugin][glossary-plugin], and [Component][glossary-component] in each
+section to the [glossary](glossary.md). Keep the original capitalization and
+pluralization in the visible text. Use reference links with short title text
+so readers can hover for a definition or click through for more detail:
+
+```markdown
+A [Plugin Type][glossary-plugin-type] defines the contract implemented by a
+[Plugin][glossary-plugin]. A [Component][glossary-component] saves its configuration.
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+```
+
+The absolute glossary URLs also work in implementation repository READMEs.
+Leave headings, code blocks, inline code, commands, identifiers, and existing
+links unchanged. Historical plans retain their original terminology.
+
+## Command examples
 
 State the working directory, Python environment, ROS overlay, and registry home
 required by command examples. Distinguish preparation/build instructions from
@@ -48,3 +70,7 @@ changes in `rpp_docs`; then update the `rpp_dev` submodule revisions together.
 Record compatibility constraints where generators, runtimes, and compiled
 artifacts must move together. Keep migration and regeneration instructions
 current when a public protocol or generated interface changes.
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

@@ -40,18 +40,19 @@ docker run --rm -it \
     ghcr.io/coe-marble/rpp-dev:lyrical
 ```
 
-Inside the container, run each tutorial in its own Python process:
+Inside the container, read
+[Tutorial 01](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/01_plugin_types_and_plugins.md)
+and follow [Tutorial 02's CLI registration steps](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/02_registration.md).
+Those two tutorials have no Python drivers. After registration, run the API
+examples in separate Python processes:
 
 ```bash
 export RPP_HOME="$HOME/.rpp_tutorials"
-rpp init-home
 
-python3 tutorials/01_plugin_type/run.py
-python3 tutorials/02_plugin_implementation/run.py
-python3 tutorials/03_registration/run.py
-python3 tutorials/04_configuration/run.py
-python3 tutorials/05_loading/run.py
-python3 tutorials/06_lifecycle/run.py
+python3 tutorials/03_configuration/run.py
+python3 tutorials/04_loading/run.py
+python3 tutorials/05_lifecycle/run.py
+python3 tutorials/06_scripts/run.py
 ```
 
 The shell sources the installed ROS and RPP workspace automatically.
@@ -60,6 +61,48 @@ tutorial uses the selected RPP home and keeps its files under
 `$RPP_HOME/tutorials`.
 See the [tutorial guide](tutorials/README.md) for the learning path
 and expected results. To keep source edits, use the exported workspace below.
+
+## Run the GUIs from a container
+
+`rpp pm` and `rpp ws --root ...` need access to a graphical display. The basic
+container command above provides a terminal session. For a local Linux desktop
+using X11 or XWayland, pass the desktop's `DISPLAY`, X11 socket, and an
+authorization cookie into the container.
+
+Run the following on the **desktop host**, where `DISPLAY` is already set and
+the `xauth` command is available. The image user's UID must match the desktop
+user's UID so it can read the cookie file; the image defaults to UID `1000`.
+
+```bash
+# Export the current display cookie in a form usable with the container hostname.
+rpp_xauth_file="$(mktemp /tmp/rpp-xauth.XXXXXX)"
+xauth nlist "$DISPLAY" | sed 's/^..../ffff/' | xauth -f "$rpp_xauth_file" nmerge -
+
+docker run --rm -it \
+    --env DISPLAY \
+    --env QT_QPA_PLATFORM=xcb \
+    --env XAUTHORITY=/tmp/rpp.xauth \
+    --env RPP_CPP_CORE_PATH=/workspaces/rpp/ros2_ws/install/rpp_cpp/lib \
+    --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix,readonly \
+    --mount "type=bind,src=$rpp_xauth_file,dst=/tmp/rpp.xauth,readonly" \
+    --workdir /workspaces/rpp/ros2_ws/src/rpp_dev/src/rpp_demos \
+    ghcr.io/coe-marble/rpp-dev:lyrical
+
+# Remove the temporary cookie after leaving the container.
+rm -f "$rpp_xauth_file"
+```
+
+Inside this container, select `RPP_HOME` and follow the tutorial registration
+steps before launching `rpp pm` or opening the configured workspace. To retain
+existing tutorial files, use the same persistent mounts as your development
+session.
+
+If Qt reports `could not connect to display`, check that the host has a running
+desktop session and that `DISPLAY`, the socket mount, and the authorization
+cookie are available inside the container. An empty `DISPLAY` indicates that
+the terminal session has no display selected. A remote or headless Docker host
+needs a graphical session or display forwarding before these GUI commands can
+open visible windows.
 
 ## 2. Export the configured workspace
 

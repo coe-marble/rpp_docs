@@ -1,6 +1,6 @@
 # RPP and ROS communication benchmarks
 
-Compare two RPP plugins coordinated by a script with two ROS 2 nodes. Each
+Compare two RPP [plugins][glossary-plugin] coordinated by a script with two ROS 2 nodes. Each
 exchange sends a sequence number and a byte payload, then echoes the complete
 payload. Timings use the sender's monotonic clock and report round trips.
 The matrix covers all three default workloads with five repetitions per case.
@@ -18,7 +18,7 @@ RPP native cases load both endpoint plugins into a script runtime. The script
 passes the source plugin's output to the responder. Native dispatch operates
 on the language's generated objects and performs no RPC serialization. RPP
 subprocess cases keep the source plugin in that script and use the normal
-Cap'n Proto RPC adapter and component server for the responder over loopback
+Cap'n Proto RPC adapter and [component][glossary-component] server for the responder over loopback
 TCP. The benchmark server launchers use the public host API with per-call
 debug logging disabled.
 
@@ -52,7 +52,7 @@ Use Linux with `/proc`, ROS 2 Lyrical or a compatible ROS 2 installation, and
 an installed RPP Python development environment. Source a current RPP C++
 overlay built from the same checkout as the Python runtime. The registration
 step needs the RPP development toolchain, including its supported Cap'n Proto
-version. The C++ drivers and registered plugins should use Release builds.
+version. The C++ drivers and registered [plugins][glossary-plugin] should use Release builds.
 
 The commands below use the development image workspace at
 `/workspaces/rpp/ros2_ws`. Substitute your current checkout and overlay paths
@@ -84,7 +84,7 @@ source "$RPP_BENCH_ROOT/install/setup.bash"
 ```
 
 `prepare.py` explicitly generates and compiles registered RPP interfaces and
-plugins. It creates a new state directory, copies the example library, and
+[plugins][glossary-plugin]. It creates a new state directory, copies the example library, and
 creates isolated script/workspace configurations. It does not modify your
 regular RPP home. If the state directory already exists, reuse it; preparation
 refuses to overwrite it. After changing the contract or plugins, prepare a
@@ -258,7 +258,7 @@ its standalone serialized size is provided for comparison. Failed or timed-out
 traffic does not count toward successful application bandwidth.
 
 CPU snapshots bracket only the steady-state measurement phase. They include
-the source, responder, RPC executor threads, and component subprocesses.
+the source, responder, RPC executor threads, and [component][glossary-component] subprocesses.
 The runner and any external middleware daemons are excluded. Snapshots use
 Linux process CPU ticks; their resolution and slightly wider sampling window
 are recorded. If the endpoint process tree changes between snapshots, total
@@ -291,3 +291,6 @@ Repetitions remain separate in the report, including each observed maximum.
 Preserve raw data when comparing tail latency across versions. After all
 processes stop, the dedicated state/build directories can be removed without
 unregistering anything in your normal RPP home.
+
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

@@ -30,7 +30,7 @@ For private repositories, configure an `RPP_CI_TOKEN` repository secret with
 **Actions: read** access to every submodule repository. A fine-grained personal
 access token or GitHub App token can provide this permission. The default
 `GITHUB_TOKEN` only has access to `rpp_dev`; it cannot read private submodules.
-Component workflows may also require **Contents: read** for their existing
+[Component][glossary-component] workflows may also require **Contents: read** for their existing
 cross-repository checkouts. Branch protection should require the **Submodule
 CI** job instead of the former integration-test job.
 
@@ -54,3 +54,5 @@ The [managed lifecycle design](plans/managed-plugin-lifecycle/feature-descriptio
 [checkpoint evidence](plans/managed-plugin-lifecycle/checkpoint-validation.md)
 are historical records. Their old APIs and test results do not describe every
 current revision; the current guides take precedence.
+
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

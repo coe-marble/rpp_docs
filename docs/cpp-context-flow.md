@@ -23,11 +23,11 @@ Alternatively, use `ComponentRuntimeBuilder(data_manager, policy, clock_options,
 validators)`, where `policy(slot_name, ComponentSlot)` returns the permission.
 These are separate constructors; the builder resolves the selected permission policy.
 It is evaluated once for each slot, including declared empty slots. `ComponentSlot`
-contains the base plugin type and `SINGLE`, `OPTION`, or `LIST` kind. Descendant
+contains the base [plugin type][glossary-plugin-type] and `SINGLE`, `OPTION`, or `LIST` kind. Descendant
 slots use the same policy, including descendants loaded later. Capture values
 or keep referenced data alive for those later builds. The decision sets each
 locally constructed manager's permission, including managers holding adapted
-components. Neither permission mode is forwarded to external hosts by the builder.
+[components][glossary-component]. Neither permission mode is forwarded to external hosts by the builder.
 The application does not create a slot manager. Building a context constructs
 objects and prepares transports; configuration and activation are separate calls.
 
@@ -36,13 +36,13 @@ objects and prepares transports; configuration and activation are separate calls
 | Type | Responsibility |
 | --- | --- |
 | `ComponentRuntimeBuilder` | Public construction facade. Assemble roots or a script slot collection with retained build settings. |
-| `ComponentConstructor<Threading>` | Resolve records and plugin metadata, prepare external hosts, load instances and parameters, and construct slots. |
+| `ComponentConstructor<Threading>` | Resolve records and [plugin][glossary-plugin] metadata, prepare external hosts, load instances and parameters, and construct slots. |
 | `SlotManager` | Own entries in one single/option/list slot. Enforce admission, lifecycle state, selection, replacement and guarded-call draining. |
 | `ComponentRuntime` | Application lifecycle/administration handle. Retain a fixed root slot or directly own a script's slot collection. |
 | `ComponentContext` | Non-template view of services and subcomponent slots; no own-slot membership operations. |
 | `SubcomponentContext` | Non-template view of one registered subcomponent: activation/deactivation, identity and typed instance access. |
 
-For component roots, the builder submits one batch to `construct_components()`.
+For [component][glossary-component] roots, the builder submits one batch to `construct_components()`.
 The constructor resolves records and prepares non-native hosts together, then creates
 each component's data. Native components recursively create slot managers and admit
 their assigned subcomponents. An external host owns its subtree; its local proxy has
@@ -79,7 +79,7 @@ script runtime
           └── component entries, recursively
 ```
 
-Slots own component data with `unique_ptr`. A script runtime directly owns its
+Slots own [component][glossary-component] data with `unique_ptr`. A script runtime directly owns its
 collection data. No manager stores runtime objects: runtime snapshots are handles
 created on demand with a slot, registration name and instance UUID. They retain
 their slot, but do not prevent explicit unloading or replacement.
@@ -91,7 +91,7 @@ script collection data has no owning slot. Release detaches the context before
 its data can disappear, so retained subcomponent views reject stale access.
 Moves transfer handles or unique script storage without rebinding contexts.
 
-A plugin can manage its subcomponents and request deferred self-deactivation.
+A [plugin][glossary-plugin] can manage its subcomponents and request deferred self-deactivation.
 Its context does not expose loading, unloading, switching or replacement in the
 slot containing itself. Those membership decisions belong to the parent/application
 that controls that slot.
@@ -113,11 +113,11 @@ subcomponent slot's permission independently.
 
 ## Configuration and activation
 
-Component-root and subcomponent-runtime commands use the same owning-manager path.
+[Component][glossary-component]-root and subcomponent-runtime commands use the same owning-manager path.
 `runtime.configure()`, `activate()`, `deactivate()` and `cleanup()` forward to that
 manager, which validates state and transitions and executes the callback traversal.
 Script runtime commands traverse their slot collection and delegate to its slot managers.
-Runtime has no root-state enum, transition flag, plugin callback execution or rollback implementation.
+Runtime has no root-state enum, transition flag, [plugin][glossary-plugin] callback execution or rollback implementation.
 
 `SlotManager::configure_component()` visits subcomponents through their slot managers before
 calling its own instance's `Plugin::configure(context)`, which dispatches
@@ -164,7 +164,7 @@ the context getter.
 `get_subcomponent<T>(slot, component_name)` returns the named loaded instance.
 Without a name, single and option slots return their selected entry. A `List[T]`
 slot always requires a name, even when it has zero or one loaded entries; omission
-throws `LifecycleError`. Applications and plugins use this same context accessor. `get_subcomponents<T>(slot)` returns the
+throws `LifecycleError`. Applications and [plugins][glossary-plugin] use this same context accessor. `get_subcomponents<T>(slot)` returns the
 loaded instances in that slot, including inactive candidates.
 
 `runtime.get_context()` returns the manager-owned self view. Its
@@ -174,7 +174,7 @@ subcomponent; `get_subcomponent_contexts(slot)` snapshots shared subcomponent vi
 snapshots remain available through `runtime.get_subcomponent_statuses(slot)`.
 
 `ComponentStatus::instance_id` is the loaded runtime's UUID, also exposed by
-`runtime.get_context().get_instance_id()` and the restricted subcomponent view. Component paths and
+`runtime.get_context().get_instance_id()` and the restricted subcomponent view. [Component][glossary-component] paths and
 slot-local registration names identify configuration/registration; the UUID
 identifies a particular loaded copy. Lifecycle transitions and moves preserve it.
 Reload creates a new UUID, and successful unload clears the entry's current ID.
@@ -229,7 +229,7 @@ optional owned state, and activates/selects the target on success.
 Validators receive the prepared candidate runtime handle and existing runtime
 snapshots, including inactive candidates. Inspect contexts through `get_context()`. They inspect metadata/parameters and
 return `CallbackResult`; they must not perform lifecycle operations. Initial
-validators are supplied to the builder, keyed by base slot plugin type and then
+validators are supplied to the builder, keyed by base slot [plugin type][glossary-plugin-type] and then
 the name of the candidate being registered. Initial names come from the workspace
 component name; empty names are rejected on registration. Dynamic registrations use
 the caller's name. Rules apply throughout the tree wherever the type and candidate
@@ -239,7 +239,7 @@ admission without evicting or revalidating current entries.
 
 ## Shutdown and failures
 
-Root `close()` deactivates its own plugin and explicitly stops remaining active
+Root `close()` deactivates its own [plugin][glossary-plugin] and explicitly stops remaining active
 descendants, including descendants under inactive parents. It then performs
 cleanup if configuration was attempted and releases runtime resources. Managed
 unload performs the same descendant shutdown before cleanup and release. This
@@ -259,13 +259,13 @@ active code.
 For an adapted node, the constructor helper prepares `ExternalComponentProcess`, loads an
 adapter client and starts/connects the hosting process. Runtime construction
 attaches that proxy and its process owner without creating local subcomponent slots.
-The host constructs the real component tree through its own runtime-builder facade. Configure/cleanup travel through `RpcControlClient` and
+The host constructs the real [component][glossary-component] tree through its own runtime-builder facade. Configure/cleanup travel through `RpcControlClient` and
 `plugin_runtime.capnp` to the real context in that process.
 The C++ endpoint is `RpcControlService` in `rpc_control_service.hpp`. This is RPC
 control, separate from the owning `ComponentRuntime`. `PluginRuntime` remains the
 shared generated wire interface name for compatibility with Python consumers.
 
-Transport preparation during building is not plugin activation. Adapted
+Transport preparation during building is not [plugin][glossary-plugin] activation. Adapted
 activation/deactivation and state handover are still explicitly unsupported in
 this increment. Native C++ trees create no RPC executor or external process.
 
@@ -284,9 +284,9 @@ this increment. Native C++ trees create no RPC executor or external process.
 Choose `ComponentRuntimeBuilder` for `SingleThreaded`, or
 `ConcurrentComponentRuntimeBuilder` for `Concurrent`. They alias
 `BasicComponentRuntimeBuilder<Threading>` and produce matching runtime and manager
-types throughout the tree, including later loads. The plugin-facing context is
+types throughout the tree, including later loads. The [plugin][glossary-plugin]-facing context is
 always the concrete, non-template `ComponentContext`, with a variant of non-owning
-references to component data for either threading policy.
+references to [component][glossary-component] data for either threading policy.
 An empty optional invalidates a retained view after release; it is not shared state.
 
 `ComponentContext` is the plugin's own environment. It exposes services, `is_active()`,
@@ -335,3 +335,7 @@ those calls with lifecycle callbacks. Framework admission applies only to guarde
 slot calls. Guard managers must outlive their callbacks; destruction, moves and
 borrowed context access across release require lifetime coordination. Adapted hosts
 choose their own local policy.
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

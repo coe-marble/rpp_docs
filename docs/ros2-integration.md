@@ -36,7 +36,7 @@ can separate helpers attached to different runtimes on the same node.
 
 Each command is a separate service with its own type. There is no slot selector
 in requests: the service path identifies the slot. `name` is the registration
-name inside that slot, not the plugin class name.
+name inside that slot, not the [plugin][glossary-plugin] class name.
 
 This helper does not authenticate service callers. Use DDS/SROS2 access-control
 policy to decide which participants may call lifecycle services.
@@ -57,7 +57,7 @@ All service types below belong to `rpp_ros2/srv`:
 | `get_status` | `GetSlotStatus` | empty |
 
 Responses contain `success` and `message`, preserving the runtime's result.
-Exceptions become failed responses. `list_components` also returns component
+Exceptions become failed responses. `list_components` also returns [component][glossary-component]
 snapshots; `get_status` also returns a complete `SlotStatus` snapshot.
 
 `timeout_ms` defaults to 1000; zero requests a nonblocking guarded-call drain.
@@ -73,7 +73,7 @@ or compile plugin sources.
 
 ## Load by library or folder
 
-When `library_name` is nonempty, `component` is a saved component's name or ID
+When `library_name` is nonempty, `component` is a saved [component][glossary-component]'s name or ID
 inside that registered library's `.rppws/parts` workspace. The saved component
 includes its parameters and subcomponents. Lookup prefers an exact ID and
 otherwise requires a unique name; missing or ambiguous matches fail. One-level
@@ -104,7 +104,7 @@ lookup initializes, refreshes, or rewrites the registry.
 
 ## List candidates and switch
 
-Prepare a loaded target, then inspect the components in this slot:
+Prepare a loaded target, then inspect the [components][glossary-component] in this slot:
 
 ```bash
 ros2 service call /robot/controller/filter/configure rpp_ros2/srv/ConfigureComponent \
@@ -160,7 +160,7 @@ ros2 topic echo /robot/controller/filter/status rpp_ros2/msg/SlotStatus \
 Each slot topic publishes immediately, after a command on that slot, and every
 second by default. It is reliable and transient-local with depth one. Snapshots
 include empty slots and unloaded/error registrations, plus the slot's dynamic
-permission. Component states are `UNLOADED=0`, `UNCONFIGURED=1`, `INACTIVE=2`,
+permission. [Component][glossary-component] states are `UNLOADED=0`, `UNCONFIGURED=1`, `INACTIVE=2`,
 `ACTIVE=3`, and `ERROR=4`. Loaded instances have a nonempty instance ID.
 
 Periodic publication uses steady/wall time, even if simulation time is paused;
@@ -256,3 +256,6 @@ Install the Python RPP dependencies into the Python environment used by ROS.
 Lyrical's `ament_cmake_python` 2.8.8 or newer merges the handwritten module with
 the generated `rpp_ros2.msg` and `rpp_ros2.srv` modules. No separate interface
 package is required.
+
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

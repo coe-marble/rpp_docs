@@ -1,9 +1,9 @@
 # Plugins, Plugin types and interfaces
 
-A **plugin type** is the contract implemented by one or more plugins. It
+A **[plugin type][glossary-plugin-type]** is the contract implemented by one or more [plugins][glossary-plugin]. It
 defines the methods, message types, lifecycle, and adapter information needed
 to instantiate and use a plugin. A **plugin** is a concrete implementation of
-one plugin type. A **component** is a self-contained saved configuration of a plugin, optionally
+one plugin type. A **[component][glossary-component]** is a self-contained saved configuration of a plugin, optionally
 containing concrete subcomponents. Its folder can be copied and loaded in
 another workspace/runtime; see [component reuse and layout](workspaces.md).
 Loading that configuration constructs a runtime instance.
@@ -18,10 +18,10 @@ runtime support.
 
 Cap'n Proto was chosen because it is designed for efficient typed data exchange
 without the usual serialization/deserialization step. Its representation can be
-used directly in memory, which reduces conversion overhead between a plugin
+used directly in memory, which reduces conversion overhead between a [plugin][glossary-plugin]
 and its runtime adapter.
 
-It also provides two features that are important for RPP plugin types:
+It also provides two features that are important for RPP [plugin types][glossary-plugin-type]:
 
 - **Generics** allow a reusable interface to be parameterized with the message
 	types it operates on.
@@ -61,8 +61,8 @@ additional schema or interface formats later, provided they can express the
 same RPP contract and integrate with the registrator and runtime adapters.
 
 ## Plugins
-RPP currently supports plugins implemented in **C++** and **Python**. Both
-languages can be used with components implemented in either language:
+RPP currently supports [plugins][glossary-plugin] implemented in **C++** and **Python**. Both
+languages can be used with [components][glossary-component] implemented in either language:
 
 - A Python component can use a Python plugin or a C++ plugin.
 - A C++ component can use a C++ plugin or a Python plugin.
@@ -73,13 +73,13 @@ languages can be used with components implemented in either language:
 
 ## Execution modes
 
-When the component and plugin use the same language, the plugin is loaded
+When the [component][glossary-component] and [plugin][glossary-plugin] use the same language, the plugin is loaded
 directly in the component process. The runtime imports the Python module or
 loads the C++ implementation using the normal language-specific mechanism.
 Construction does not configure or activate the instance; applications control
 its [managed lifecycle](runtime-lifecycle.md).
 From the component's point of view, it uses the plugin through its registered
-plugin-type interface.
+[plugin-type][glossary-plugin-type] interface.
 
 When the component and plugin use different languages, the plugin is executed
 in a separate process by the appropriate component server. The component and
@@ -102,15 +102,15 @@ the Cap'n Proto contract keeps the exchanged data and methods language-neutral.
 
 ## Local and remote execution
 
-Today, the separate component-server process is used for cross-language
+Today, the separate [component][glossary-component]-server process is used for cross-language
 execution on the same machine. In the future, execution placement will be
-configurable, allowing a component and its plugin to run on different
+configurable, allowing a component and its [plugin][glossary-plugin] to run on different
 machines when required.
 
 The component uses the same client API in both cases. It does not need to know
 whether it is communicating with a local plugin instance through a local
 component server or with a remote instance over a network connection. Only the
-transport and deployment configuration change; the plugin-type interface and
+transport and deployment configuration change; the [plugin-type][glossary-plugin-type] interface and
 client-facing API remain the same.
 
 This separation makes deployment an operational choice rather than a change
@@ -121,7 +121,7 @@ be rewritten for a different API.
 
 ## Design rules
 
-- Plugin types are defined inside plugin libraries.
+- [Plugin types][glossary-plugin-type] are defined inside [plugin][glossary-plugin] libraries.
 - A library declares its plugin-type source files in its `plugins.json` file.
 - A library declares its dependencies on other libraries in its `plugins.json` file. The registrator uses this information to generate the correct interface for each plugin type.
 - The `PluginTypes` entries point to Cap'n Proto files whose annotated interfaces
@@ -160,7 +160,7 @@ library registry when the library is registered or refreshed.
 
 ## Lifecycle state and generated adapters
 
-Plugin contracts can declare an owned handover state with
+[Plugin][glossary-plugin] contracts can declare an owned handover state with
 `$Anot.lifecycleState("Estimate")`, naming a local non-generic struct. The
 registrator generates Python dataclasses and C++ native values for lifecycle
 callbacks. Stateless types take no activation-state argument.
@@ -176,3 +176,7 @@ C++ code using only the native contract includes `<Type>.hpp`. Code constructing
 RPC adapters explicitly includes `<Type>_Adapter_Client.hpp` or
 `<Type>_Adapter_Server.hpp`. See [RPC result lifetime](component_connection.md#c-rpc-result-lifetime)
 for retained views and shutdown requirements.
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

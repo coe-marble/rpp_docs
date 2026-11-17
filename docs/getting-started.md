@@ -22,7 +22,7 @@ start in the `rpp_dev` repository unless another directory is stated.
 - ROS 2 and `colcon` for ROS integration; ROS itself is optional for native RPP.
 
 Registration can generate and compile native supporting artifacts even for
-Python plugins. A Python-only application may still need these native tools.
+Python [plugins][glossary-plugin]. A Python-only application may still need these native tools.
 
 ## Install the development checkout
 
@@ -85,7 +85,7 @@ rpp library create demo
 rpp ws create demo
 ```
 
-See [workflows](workflows.md) for registering libraries and composing components,
+See [workflows](workflows.md) for registering libraries and composing [components][glossary-component],
 and [CLI](cli.md) for command arguments. Select an isolated registry using
 `RPP_HOME` or `rpp --rpp-home DIRECTORY ...` before loading RPP modules.
 
@@ -96,3 +96,6 @@ Update the source packages and matching native runtime, then follow
 interfaces/adapters and rebuild downstream C++ artifacts together.
 `rpp init-home --override` resets installed library registrations; use migration
 when preserving an existing registry.
+
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

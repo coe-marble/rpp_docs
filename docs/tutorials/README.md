@@ -1,63 +1,43 @@
-# RPP demos and tutorials
+# RPP tutorials
 
-The runnable sources live in `rpp_dev/src/rpp_demos`; this guide and the
-individual walkthroughs are maintained here in `rpp_docs`.
+The sources live in `rpp_dev/src/rpp_demos/tutorials`; the walkthroughs live here
+in `rpp_docs`. Start by reading contracts and implementations, then register
+them through the CLI before moving on to [component][glossary-component] and script APIs.
 
-Six runnable tutorials follow one plugin from its contract to lifecycle
-management. Integrated demos and benchmarks have separate folders.
+| Tutorial | Focus | What you do |
+| --- | --- | --- |
+| [1. Plugin types and implementations](01_plugin_types_and_plugins.md) | Contracts, source files, and implementation methods | Read `rpp_common` and the example [library][glossary-library]; no driver to run |
+| [2. CLI registration and inspection](02_registration.md) | Linked libraries, types, [plugins][glossary-plugin], and generated interfaces | Use `rpp` to register and inspect; read Python and C++ code |
+| [3. Configuration and composition](03_configuration.md) | Component identities and independent settings | Save [parameters][glossary-parameter] and inspect them through the CLI and API |
+| [4. Loading and invocation](04_loading.md) | Constructing [runtimes][glossary-runtime] and making typed calls | Load saved components and call `process` |
+| [5. Lifecycle management and handover](05_lifecycle.md) | Transitions, state transfer, and resource ownership | Transfer total `7` to a second accumulator and continue at `12` |
+| [6. Script slots, loading, and execution](06_scripts.md) | Typed [slots][glossary-slot], assignments, and Python script execution | Run an affine processor and accumulator pipeline |
 
 ```text
-rpp_demos/
-  tutorials/
-    example_library/          # Schema, implementation, and library metadata
-    tutorial_support.py       # Persistent setup and runtime cleanup
-    01_plugin_type/
-    02_plugin_implementation/
-    03_registration/
-    04_configuration/
-    05_loading/
-    06_lifecycle/
-  demos/                      # Localization and ROS integration planned
-  benchmarks/                 # RPP and ROS communication comparisons
+rpp_demos/tutorials/
+  01_plugin_types_and_plugins/ # Reading guide; no Python driver
+  02_registration/            # CLI guide; no Python driver
+  03_configuration/run.py
+  04_loading/run.py
+  05_lifecycle/run.py
+  06_scripts/run.py
+  example_library/
+    package.json
+    plugins.json
+    plugin_types/
+    plugins/
+    scripts/scalar_pipeline.py
 ```
 
 ## Prerequisites and execution
 
-First, select the RPP home in the shell where you will run the tutorials:
+Use the [`rpp_dev` development image](https://github.com/coe-marble/rpp_docs/blob/develop/docs/development-image.md)
+or follow the [host installation guide](https://github.com/coe-marble/rpp_docs/blob/develop/docs/getting-started.md).
+You need Python 3.10 or newer, the installed RPP packages, and the native
+registration dependencies. The examples use native Python [components][glossary-component]; ROS is
+not required for their application logic.
 
-```bash
-export RPP_HOME="$HOME/.rpp_tutorials"
-rpp init-home
-```
-
-Run these commands inside the container when using the development image, or
-in your installed RPP environment for a host setup. All six tutorials use this
-home's registry and configuration. Their copied example library and workspaces
-remain under `$RPP_HOME/tutorials` for inspection after each run. The drivers
-require `RPP_HOME` to be set and never replace it with a temporary directory.
-
-The shared helper refreshes `rpp_common` before registering the example library.
-The example contract imports its `Anot` schema, so this dependency must be
-registered with the current registrator version. To inspect or refresh it
-manually in an existing tutorial home:
-
-```bash
-rpp library info rpp_common
-rpp library refresh rpp_common
-```
-
-This also repairs a missing library registration-version record left by older
-home initialization code, without resetting the tutorial home.
-
-Each walkthrough includes CLI commands to inspect what its driver registered
-or saved. Run those commands after the driver, in the same shell. If you open
-another shell, set `export RPP_HOME="$HOME/.rpp_tutorials"` there too so the CLI
-inspects the tutorial home. Use `rpp --help`, `rpp registry --help`,
-`rpp library --help`, and `rpp ws component --help` to explore the commands.
-
-The recommended way to run these tutorials is the
-[`rpp_dev` development image](../development-image.md), which includes the tutorial
-sources, installed RPP runtime, and native registration tools. Start a tutorial shell from the host:
+For the development image, open a tutorial shell:
 
 ```bash
 docker run --rm -it \
@@ -66,85 +46,84 @@ docker run --rm -it \
     ghcr.io/coe-marble/rpp-dev:lyrical
 ```
 
-Then run the tutorial commands below inside the container. For image setup and
-persistent source edits, see the [image guide](../development-image.md).
-
-For a host setup, follow [installation](../getting-started.md). Use Python 3.10 or newer in an installed RPP development environment providing
-`rpp_common`, `rpp_plugin_registrator`, `rpp_orchestrator`, and `rpp_py` and their
-dependencies. These drivers use the public `LibraryManager`, `Workspace`,
-`ComponentRequest`, and `ComponentRuntimeBuilder` APIs. ROS is not required.
-
-Registration generates interfaces and may compile native supporting artifacts
-even for Python plugins. The container command explicitly exports
-`RPP_CPP_CORE_PATH` so registration can locate the native runtime.
-In a host setup, export this
-variable to the directory containing `librpp_cpp` and `librpp_cpp_core` before
-running the drivers (for example, `build/rpp_cpp` for a standalone build or
-`install/rpp_cpp/lib` for an isolated colcon installation). The examples do not install dependencies
-or build the RPP runtime for you.
-
-Run from `rpp_dev/src/rpp_demos` using your RPP environment's Python
-(the container command above opens that directory):
+Inside that shell, select a persistent tutorial home before using `rpp`:
 
 ```bash
-python3 tutorials/01_plugin_type/run.py
-python3 tutorials/02_plugin_implementation/run.py
-python3 tutorials/03_registration/run.py
-python3 tutorials/04_configuration/run.py
-python3 tutorials/05_loading/run.py
-python3 tutorials/06_lifecycle/run.py
+export RPP_HOME="$HOME/.rpp_tutorials"
+rpp init-home
 ```
 
-Each driver includes its prerequisites from earlier stages and runs
-independently. Run each in a fresh Python process because RPP caches
-configuration and generated modules. Absolute driver paths also work from
-other working directories.
+Registration can compile supporting artifacts even for Python implementations.
+On a host installation, set `RPP_CPP_CORE_PATH` to the directory containing
+`librpp_cpp` and `librpp_cpp_core` before registering types and [plugins][glossary-plugin]. The
+container command above supplies the isolated colcon [library][glossary-library] directory.
 
-Every driver copies the example library to `$RPP_HOME/tutorials/example_library`,
-registers or refreshes it in the selected home's registry, and creates a
-workspace under `$RPP_HOME/tutorials/<tutorial>/workspace` as needed. Runtime
-handles close on exit, including on exceptions; sources, generated artifacts,
-registry entries, and workspaces persist. Rerunning a tutorial restores its
-example sources and resets its component parameters to the demonstrated values.
-The `example_library` name is reserved for these examples; a registration from
-another source path causes an error. Run the drivers sequentially because they
-share this library. Tutorial 1 removes its implementation registration to show
-the type alone; the later tutorials register the implementation again.
+Read Tutorial 01, then follow Tutorial 02's CLI steps to copy the example library
+to `$RPP_HOME/tutorials/example_library` and register it with `--link`. Tutorial
+02 also shows how to inspect types, plugins, and generated Python and C++ code.
+There are no Python drivers for those two tutorials.
 
-## Learning path
+After CLI registration, run the API examples from `rpp_dev/src/rpp_demos`:
 
-`example_library::ScalarProcessor` declares `process(value)`.
-`example_library::AffineProcessor` implements `gain * value + offset`.
-Defaults are gain `1` and offset `0`; the component `processor` uses gain `2`
-and offset `1`.
+```bash
+python3 tutorials/03_configuration/run.py
+python3 tutorials/04_loading/run.py
+python3 tutorials/05_lifecycle/run.py
+python3 tutorials/06_scripts/run.py
+```
 
-| Tutorial | Main lesson | Observable result |
+Run each in a fresh Python process because RPP caches [registry][glossary-registry] settings and
+generated modules. Keep `RPP_HOME` set in every shell used for the CLI or scripts.
+The standalone scripts use public RPP APIs directly; they do not register the
+library for you or import a tutorial framework.
+
+The configuration, loading, and [lifecycle][glossary-lifecycle] examples save their [workspaces][glossary-workspace] under
+`$RPP_HOME/tutorials/<tutorial>/workspace`. The script example makes the copied
+library itself a workspace and saves its script assignments there. [Runtime][glossary-runtime]
+handles close on exit, including on exceptions. Registered metadata, generated
+interfaces, copied sources, and component configurations persist for inspection.
+
+After updating example sources, copy them again using Tutorial 02's instructions
+and run `rpp library refresh example_library`. A linked registration reads the
+copied source directory; changes elsewhere in the checkout take effect after
+you update that copy. The runners reset their example component [parameters][glossary-parameter] when
+preparing a run.
+
+Each walkthrough provides commented inspection commands. Explore further with
+`rpp registry --help`, `rpp library --help`, and `rpp ws component --help`.
+The [workspace guide](https://github.com/coe-marble/rpp_docs/blob/develop/docs/workspaces.md)
+explains saved components, assignments, and parameter files in more detail.
+
+## Example library
+
+| Type | Implementation | Operation |
 | --- | --- | --- |
-| [1. Plugin type](01_plugin_type.md) | Annotated schema and generated contract | Type registered with zero implementations |
-| [2. Implementation](02_plugin_implementation.md) | Method, parameters, and lifecycle hooks | Default result `3`, configured result `7` |
-| [3. Registration](03_registration.md) | Identities, source refresh, and missing sources | Plugin resolves to its registered type |
-| [4. Configuration and composition](04_configuration.md) | Component identity, defaults, and overrides | Independent workspace settings |
-| [5. Loading and invocation](05_loading.md) | Runtime construction and typed calls | `processor` returns `7`, `identity` returns `3` |
-| [6. Lifecycle](06_lifecycle.md) | Transitions, recovery, and resource ownership | Inactive calls fail; reactivation succeeds |
+| `example_library::ScalarProcessor` | `example_library::AffineProcessor` | `gain * value + offset` |
+| `example_library::ScalarAccumulator` | `example_library::AccumulatingProcessor` | Accumulate successive scalar inputs |
 
-Each driver includes an intentional failure and checks the expected outcome.
-Unexpected errors propagate and produce an unsuccessful exit. Walkthroughs show
-application output; initialization logs and detailed diagnostics depend on
-the installed RPP version.
-
-Registration publishes an implementation. Workspace configuration selects its
-settings for a component instance. Loading constructs runtime objects.
-Lifecycle transitions govern configuration, operation, and cleanup.
+The defaults for the affine processor are gain `1` and offset `0`. The configured
+examples use gain `2` and offset `1`. Tutorial 05 explains the accumulator's
+state transfer. Tutorial 06 connects both [components][glossary-component] using script [slots][glossary-slot] and
+produces totals `3`, `8`, and `15` for inputs `1`, `2`, and `3`.
 
 ## Later work
 
-Add a tutorial on executable parameter definitions, shared YAML beside
-`params/parameters.py`, and storing evaluated values. The
-[workspace guide](../workspaces.md#yaml-and-shared-parameter-data) describes the
-pattern; this follow-up tutorial is not implemented yet.
+Add a tutorial on executable [parameter][glossary-parameter] definitions, shared YAML beside
+`params/parameters.py`, and storing evaluated values. See the
+[workspace guide](https://github.com/coe-marble/rpp_docs/blob/develop/docs/workspaces.md#yaml-and-shared-parameter-data)
+for that pattern. C++ implementations of the example contracts and
+cross-language execution can follow.
 
-Add a C++ implementation of the same contract and cross-language examples.
-The [localization demo plan](../demos.md) covers multiple algorithms and
-ROS lifecycle control through `rpp_ros2`. The
-[communication benchmarks](../benchmarks/communication.md) compare native
-and subprocess RPP/ROS communication with reproducible workloads.
+Integrated demos and benchmarks have separate guides:
+[localization demo plan](https://github.com/coe-marble/rpp_docs/blob/develop/docs/demos.md)
+and [communication benchmarks](https://github.com/coe-marble/rpp_docs/blob/develop/docs/benchmarks/communication.md).
+
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-registry]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#registry "Registry: metadata describing registered libraries, Plugin Types, and Plugins."
+[glossary-workspace]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
+[glossary-runtime]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
+[glossary-slot]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#slot "Slot: a named, typed location for components in a script or composite plugin."
+[glossary-parameter]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."
+[glossary-lifecycle]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#lifecycle "Lifecycle: managed states and transitions for component configuration, activation, and shutdown."

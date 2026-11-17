@@ -2,11 +2,11 @@
 
 Applications construct `ComponentRuntime` and `ScriptRuntime` handles through
 `ComponentRuntimeBuilder`. These handles own lifecycle and slot administration.
-Plugins receive `ComponentContext` for parameters, logger, clock, identity, and
+[Plugins][glossary-plugin] receive `ComponentContext` for parameters, logger, clock, identity, and
 subcomponent access. `SubcomponentContext` provides a restricted view of one
 child's instance, identity, and activation/deactivation operations.
 
-A component root occupies a fixed single slot. A script owns a collection of
+A [component][glossary-component] root occupies a fixed single slot. A script owns a collection of
 slots and has no root plugin instance or component lifecycle state. Building
 loads instances and prepares external transports; configuration and activation
 are explicit. Purely native trees create no RPC executor or external process.
@@ -14,7 +14,7 @@ The application supplies its own update loop.
 
 ## Build and use a native Python component
 
-Given a saved component folder in an RPP workspace:
+Given a saved [component][glossary-component] folder in an RPP workspace:
 
 ```python
 from rpp_py.context_builder import ComponentRuntimeBuilder
@@ -70,14 +70,14 @@ callback failures can leave an entry in `ERROR`. Status snapshots include the
 current state, transition, last result, guarded-call count, and instance ID.
 Inspect the actual result before choosing recovery.
 
-Plugins implement `on_configure(context)`, `on_cleanup()`, `on_activate()`, and
+[Plugins][glossary-plugin] implement `on_configure(context)`, `on_cleanup()`, `on_activate()`, and
 `on_deactivate()`. Stateless callbacks return `CallbackResult`.
 Configuration resolves resources and validates parameters; cleanup must handle
 partial configuration. Configuration visits children before their parent.
 Cleanup visits the parent before children in reverse order and continues after
 independent failures.
 
-Ordinary component activation/deactivation affects that plugin. Composite
+Ordinary [component][glossary-component] activation/deactivation affects that plugin. Composite
 plugins choose when to call `context.activate_subcomponents()` and
 `context.deactivate_subcomponents()` in their callbacks. Script applications
 call these helpers directly. Activation helpers select the exclusive candidate
@@ -97,7 +97,7 @@ replacement for deterministic closure.
 
 | Declaration | Initial assignments | Activation |
 | --- | --- | --- |
-| `library::Type` | One required component | Exclusive |
+| `library::Type` | One required [component][glossary-component] | Exclusive |
 | `Option[library::Type]` | Zero or more candidates | At most one active |
 | `List[library::Type]` | Zero or more components | Several may be active |
 
@@ -128,12 +128,12 @@ require the affected slot's permission.
 and activates/selects the target. Prepare the target and check its status before
 switching. `reload_component(..., transfer_state=False)` reconstructs an instance
 using registered artifacts. The ROS helper does not refresh sources or compile
-plugins during reload. A failed switch must be inspected; do not assume the old
+[plugins][glossary-plugin] during reload. A failed switch must be inspected; do not assume the old
 source remains active or that failure rolls it back automatically.
 
 ## Typed handover
 
-A plugin type can bind a local, non-generic state struct using
+A [plugin type][glossary-plugin-type] can bind a local, non-generic state struct using
 `$Anot.lifecycleState("Estimate")`. Python receives the generated dataclass;
 C++ uses an owned `Estimate_Native` value through `LifecyclePlugin<State>`.
 Stateful activation accepts optional state; stateful deactivation returns
@@ -147,12 +147,12 @@ and ordinary domain-method RPC are available.
 
 ## Access, identity, and guarded calls
 
-Use `runtime.get_context()` for plugin-facing services and access to children.
+Use `runtime.get_context()` for [plugin][glossary-plugin]-facing services and access to children.
 Python's `get_subcomponent_context(slot, name).get_instance()` accesses a named
 child; C++ uses `get_subcomponent<T>(slot, name)`. Omit the name only for the
 selected single/optional entry. List slots always require a name.
 
-A loaded instance has an opaque UUID, distinct from its saved component ID,
+A loaded instance has an opaque UUID, distinct from its saved [component][glossary-component] ID,
 source path, and slot registration name. Lifecycle changes preserve it; reload
 creates a new UUID. Unload clears the current ID. Old child views reject access
 to released or replaced instances.
@@ -190,7 +190,7 @@ retry. No background lifecycle processor is created.
 
 ## Admission and parameters
 
-Initial `registration_validators` are keyed by base plugin type and candidate
+Initial `registration_validators` are keyed by base [plugin type][glossary-plugin-type] and candidate
 registration name. They apply to matching candidates in any slot, including
 later loads. A validator receives the candidate runtime and existing runtime
 snapshots, inspects metadata/parameters through `get_context()`, and returns
@@ -198,9 +198,9 @@ snapshots, inspects metadata/parameters through `get_context()`, and returns
 `runtime.set_registration_validator(slot, validator)` adds a rule for future
 admissions without revalidating existing entries.
 
-Parameter precedence is plugin defaults, saved workspace settings, then builder
+Parameter precedence is [plugin][glossary-plugin] defaults, saved workspace settings, then builder
 overrides. `builder.set_parameter_overrides({"library::Plugin": {"gain": 2.0}})`
-replaces overrides for future builds and matching native components throughout
+replaces overrides for future builds and matching native [components][glossary-component] throughout
 the tree. Undeclared names and adapted-component overrides are rejected. Input
 values are copied; existing runtimes and later dynamic loads retain their captured
 settings. Pass `{}` to clear overrides for future builds. Close and rebuild an
@@ -215,7 +215,7 @@ future builds without launching it or changing existing runtimes.
 The `initialize()` API was removed. Migrate resource initialization to
 `on_configure(context)` and release to `on_cleanup()`, with explicit callback
 results. Application lifecycle and slot administration use runtime handles;
-plugins use contexts. Regenerate interfaces and adapters and rebuild dependent
+[plugins][glossary-plugin] use contexts. Regenerate interfaces and adapters and rebuild dependent
 C++ code together with matching runtimes. See [registry upgrades](registry.md#upgrade-an-existing-registry)
 and the [RPC response ownership rules](component_connection.md#c-rpc-result-lifetime).
 
@@ -223,3 +223,7 @@ Source references: [Python runtime](https://github.com/coe-marble/rpp_py/blob/de
 [Python context](https://github.com/coe-marble/rpp_py/blob/develop/rpp_py/context.py),
 [Python builder](https://github.com/coe-marble/rpp_py/blob/develop/rpp_py/context_builder.py), and
 [C++ runtime](https://github.com/coe-marble/rpp_cpp/blob/develop/include/rpp_cpp/runtime.hpp).
+
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

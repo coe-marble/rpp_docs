@@ -1,7 +1,7 @@
 # Components, workspaces, and script configurations
 
 `rpp-orchestrator` provides workspace and GUI management. It depends on `rpp-py`
-for component-slot metadata and parsing shared with the runtime.
+for [component][glossary-component]-slot metadata and parsing shared with the runtime.
 
 The orchestrator stores one script description per script in
 `.rppws/script_descriptions/<script-name>.json`.
@@ -12,7 +12,7 @@ See [core workflows](workflows.md) for creation and registration,
 
 ## Components are self-contained, reusable folders
 
-A plugin is an implementation registered in an RPP library. A **component** is
+A [plugin][glossary-plugin] is an implementation registered in an RPP library. A **[component][glossary-component]** is
 one saved configuration of that plugin: its description, parameters, local data,
 and concrete subcomponents live together in a directory. A workspace collects
 these component folders and assigns them to scripts through named configurations.
@@ -32,7 +32,7 @@ resources; the implementation is resolved by its qualified `PluginName`.
 
 A workspace is an ordinary project directory containing `.rppws`. Scripts can
 live in the project directory; `.rppws` stores their descriptions, configurations,
-and saved components. A typical layout is:
+and saved [components][glossary-component]. A typical layout is:
 
 ```text
 my_workspace/
@@ -71,7 +71,7 @@ explicitly by the parameter script; it is not an RPP-required file.
 | --- | --- |
 | `script_descriptions/<script-name>.json` | Script source reference, slot specification, named configurations, and active configuration |
 | `parts/<plugin-id>/<component-id>/` | A saved root component and its complete concrete subtree |
-| `description.json` | Saved component ID/name, plugin identity/type, child slot specification and assignments, and parent metadata when nested |
+| `description.json` | Saved component ID/name, [plugin][glossary-plugin] identity/type, child slot specification and assignments, and parent metadata when nested |
 | `params/parameters.py` | Executable parameter definition exposing `ComponentParameters` |
 | `data/` inside a component | Files that should travel with that component |
 | `subcomponents/<child-id>/` | Owned child component folders, with their own parameters/data/children |
@@ -90,7 +90,7 @@ owns registered libraries and generated interfaces.
 
 ## Copy, discover, and register a component
 
-Copy the entire root component directory, including `params`, `data`, and
+Copy the entire root [component][glossary-component] directory, including `params`, `data`, and
 `subcomponents`. For workspace discovery, place it under the destination's
 `.rppws/parts/<plugin-id>/<component-id>/` with its description and IDs intact.
 Opening a new `Workspace` scans component descriptions under `parts` and indexes
@@ -146,8 +146,8 @@ class ComponentParameters:
     offset = 1.0
 ```
 
-The plugin declares parameter names and defaults using `ParameterDescription`
-and `ParamSet`. Component attributes supply the saved values for that instance;
+The [plugin][glossary-plugin] declares parameter names and defaults using `ParameterDescription`
+and `ParamSet`. [Component][glossary-component] attributes supply the saved values for that instance;
 omitted declared parameters fall back to plugin defaults. Builder overrides take
 precedence over these values for matching native components.
 
@@ -178,7 +178,7 @@ class ComponentParameters:
 ## YAML and shared parameter data
 
 If YAML is convenient, load it from the Python parameter definition. RPP does
-not automatically interpret a sibling YAML file as component parameters.
+not automatically interpret a sibling YAML file as [component][glossary-component] parameters.
 For a portable component, keep the data beside the script:
 
 ```text
@@ -227,7 +227,7 @@ The YAML file is not rewritten by this save operation.
 A later tutorial will demonstrate loading shared YAML, evaluating custom
 parameter logic, and storing the resulting values. The six existing tutorials
 remain the current learning path; see
-[configuration and composition](tutorials/04_configuration.md).
+[configuration and composition](tutorials/03_configuration.md).
 
 ## Script configurations
 
@@ -271,8 +271,11 @@ configuration.
 
 The left-side script tree contains configuration children. Selecting a
 configuration displays and edits its assignments under **Configuration
-Components**. Double-clicking a configuration activates it; the active
+[Components][glossary-component]**. Double-clicking a configuration activates it; the active
 configuration is highlighted in green.
 
 The contextual action group shows script actions when no configuration is
 selected and configuration actions when a configuration is selected.
+
+[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
