@@ -90,7 +90,7 @@ records the slot contracts and named configurations assigning components to
 them. Building a script runtime constructs the selected components. Executing
 the script body is a separate application step.
 
-See [script slots, loading, and execution](tutorials/06_scripts.md).
+See [script slots, loading, and execution](tutorials/05_scripts.md).
 
 ## Slot
 

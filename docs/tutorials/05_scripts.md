@@ -1,4 +1,4 @@
-# Tutorial 6 Script slots, loading, and execution
+# Tutorial 5 Script slots, loading, and execution
 
 ## Prerequisites
 
@@ -17,8 +17,7 @@ RPP APIs directly in a standalone Python script.
 The copied library must include
 [`scripts/scalar_pipeline.py`](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/example_library/scripts/scalar_pipeline.py).
 After updating the checkout, follow Tutorial 02's source-copy and refresh steps
-to update the linked library. Tutorials 04 and 05 introduce the [runtime][glossary-runtime] APIs
-used here.
+to update the linked library. Tutorial 04 introduces the [runtime][glossary-runtime] construction APIs used here.
 
 ## Description
 
@@ -50,10 +49,10 @@ components; execution of the Python body is an explicit application step.
 
 ### Define assignments and load the script
 
-Read the standalone [runner](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/06_scripts/run.py), then execute:
+Read the standalone [runner](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/05_scripts/run.py), then execute:
 
 ```bash
-python3 tutorials/06_scripts/run.py
+python3 tutorials/05_scripts/run.py
 ```
 
 The runner makes the registered example [library][glossary-library] a [workspace][glossary-workspace]. It creates or

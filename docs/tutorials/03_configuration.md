@@ -38,6 +38,16 @@ offset `1` for processor, and gain `1`, offset `0` for identity.
 Resolution is [plugin][glossary-plugin] defaults, saved component settings, then builder overrides.
 The driver demonstrates a string gain in saved settings and an infinite gain
 through `set_parameter_overrides`; both produce expected configuration failures.
+The final two lines are deliberately labeled `Expected failure`:
+
+```text
+Expected failure (invalid saved gain): success=False; ...gain must be a finite number
+Expected failure (invalid gain override): success=False; ...gain must be a finite number
+```
+
+These rejections demonstrate validation working correctly; they do not indicate
+that the tutorial failed.
+
 Builder overrides are keyed by qualified plugin identity and affect matching
 native Python components in future builds, rather than editing one component.
 

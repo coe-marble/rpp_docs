@@ -1,4 +1,4 @@
-# Tutorial 5 Lifecycle management and handover
+# Tutorial 6 Lifecycle management and handover
 
 ## Prerequisites
 
@@ -35,10 +35,10 @@ value such as total `7` serve different purposes.
 
 ### Run the example
 
-Read the standalone [run.py](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/05_lifecycle/run.py), then execute:
+Read the standalone [run.py](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/06_lifecycle/run.py), then execute:
 
 ```bash
-python3 tutorials/05_lifecycle/run.py
+python3 tutorials/06_lifecycle/run.py
 ```
 
 The script uses `Workspace`, `ComponentRequest`, and
@@ -84,7 +84,7 @@ files do not persist the exported handover payload.
 ### Inspect the result
 
 ```bash
-workspace="$RPP_HOME/tutorials/05_lifecycle/workspace"
+workspace="$RPP_HOME/tutorials/06_lifecycle/workspace"
 
 # Find both components and see which implementation each uses.
 rpp ws component list "$workspace"

@@ -10,8 +10,8 @@ them through the CLI before moving on to [component][glossary-component] and scr
 | [2. CLI registration and inspection](02_registration.md) | Linked libraries, types, [plugins][glossary-plugin], and generated interfaces | Use `rpp` to register and inspect; read Python and C++ code |
 | [3. Configuration and composition](03_configuration.md) | Component identities and independent settings | Save [parameters][glossary-parameter] and inspect them through the CLI and API |
 | [4. Loading and invocation](04_loading.md) | Constructing [runtimes][glossary-runtime] and making typed calls | Load saved components and call `process` |
-| [5. Lifecycle management and handover](05_lifecycle.md) | Transitions, state transfer, and resource ownership | Transfer total `7` to a second accumulator and continue at `12` |
-| [6. Script slots, loading, and execution](06_scripts.md) | Typed [slots][glossary-slot], assignments, and Python script execution | Run an affine processor and accumulator pipeline |
+| [5. Script slots, loading, and execution](05_scripts.md) | Typed [slots][glossary-slot], assignments, and Python script execution | Run an affine processor and accumulator pipeline |
+| [6. Lifecycle management and handover](06_lifecycle.md) | Transitions, state transfer, and resource ownership | Transfer total `7` to a second accumulator and continue at `12` |
 
 ```text
 rpp_demos/tutorials/
@@ -19,8 +19,8 @@ rpp_demos/tutorials/
   02_registration/            # CLI guide; no Python driver
   03_configuration/run.py
   04_loading/run.py
-  05_lifecycle/run.py
-  06_scripts/run.py
+  05_scripts/run.py
+  06_lifecycle/run.py
   example_library/
     package.json
     plugins.json
@@ -68,8 +68,8 @@ After CLI registration, run the API examples from `rpp_dev/src/rpp_demos`:
 ```bash
 python3 tutorials/03_configuration/run.py
 python3 tutorials/04_loading/run.py
-python3 tutorials/05_lifecycle/run.py
-python3 tutorials/06_scripts/run.py
+python3 tutorials/05_scripts/run.py
+python3 tutorials/06_lifecycle/run.py
 ```
 
 Run each in a fresh Python process because RPP caches [registry][glossary-registry] settings and
@@ -102,8 +102,8 @@ explains saved components, assignments, and parameter files in more detail.
 | `example_library::ScalarAccumulator` | `example_library::AccumulatingProcessor` | Accumulate successive scalar inputs |
 
 The defaults for the affine processor are gain `1` and offset `0`. The configured
-examples use gain `2` and offset `1`. Tutorial 05 explains the accumulator's
-state transfer. Tutorial 06 connects both [components][glossary-component] using script [slots][glossary-slot] and
+examples use gain `2` and offset `1`. Tutorial 06 explains the accumulator's
+state transfer. Tutorial 05 connects both [components][glossary-component] using script [slots][glossary-slot] and
 produces totals `3`, `8`, and `15` for inputs `1`, `2`, and `3`.
 
 ## Later work

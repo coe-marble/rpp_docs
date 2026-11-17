@@ -58,11 +58,16 @@ Loaded processor; active=False
 processor = 7
 Loaded identity; active=False
 identity = 3
+Expected failure (unknown component): Component not found: missing
+Expected failure (missing component folder): Component description not found in: .../missing
 ```
 
 `processor` saves gain `2` and offset `1`; `identity` uses the [plugin][glossary-plugin] defaults.
 The last two examples catch an unknown component name and a missing component
-folder with ordinary Python `try`/`except`. The saved [workspace][glossary-workspace] remains available
+folder with ordinary Python `try`/`except`. Both are intentional and labeled
+`Expected failure`; the tutorial should finish without a traceback. A missing
+component description raises `FileNotFoundError` from the loading API.
+The saved [workspace][glossary-workspace] remains available
 after the [runtimes][glossary-runtime] close.
 
 ### Inspect the result

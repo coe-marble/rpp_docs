@@ -51,8 +51,8 @@ export RPP_HOME="$HOME/.rpp_tutorials"
 
 python3 tutorials/03_configuration/run.py
 python3 tutorials/04_loading/run.py
-python3 tutorials/05_lifecycle/run.py
-python3 tutorials/06_scripts/run.py
+python3 tutorials/05_scripts/run.py
+python3 tutorials/06_lifecycle/run.py
 ```
 
 The shell sources the installed ROS and RPP workspace automatically.

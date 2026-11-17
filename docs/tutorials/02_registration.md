@@ -10,9 +10,6 @@ environment. Select the tutorial home before using the CLI:
 ```bash
 export RPP_HOME="$HOME/.rpp_tutorials"
 rpp init-home
-
-# Bring the common library's registration record up to date.
-rpp library refresh rpp_common
 ```
 
 ## Description
