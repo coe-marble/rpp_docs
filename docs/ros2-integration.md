@@ -150,7 +150,8 @@ ros2 service call /robot/controller/filter/unload rpp_ros2/srv/UnloadComponent \
 
 ## Example: switching the localization filter
 
-The `rpp_localization` node exposes its `filter` slot through this helper. Its
+The [`rpp_localization`](https://github.com/coe-marble/rpp_localization/tree/develop)
+node exposes its `filter` slot through this helper. Its
 `LocalizationFilter15` [plugin type][glossary-plugin-type] binds `Estimate15`
 (state, covariance, and reference time) as typed handover state, so EKF and UKF
 [components][glossary-component] can replace each other while keeping the estimate.
@@ -159,7 +160,9 @@ Switching requires dynamic modification, which the node disables by default.
 Enable it with the node parameter `allow_dynamic_components: true`. For a node
 named `filter` in namespace `/rpp_localization`, the slot services are under
 `/rpp_localization/filter/filter/`. The initial entry is named after its saved
-component, for example `DefaultEkf15`:
+component, for example `DefaultEkf15`. Run the commands in any directory, in a
+shell with the ROS workspace overlay that provides `rpp_ros2` and
+`rpp_localization` sourced, while the node is running:
 
 ```bash
 ros2 service call /rpp_localization/filter/filter/load rpp_ros2/srv/LoadComponent \
