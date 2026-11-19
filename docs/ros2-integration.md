@@ -148,6 +148,42 @@ ros2 service call /robot/controller/filter/unload rpp_ros2/srv/UnloadComponent \
   "{name: ukf}"
 ```
 
+## Example: switching the localization filter
+
+The `rpp_localization` node exposes its `filter` slot through this helper. Its
+`LocalizationFilter15` [plugin type][glossary-plugin-type] binds `Estimate15`
+(state, covariance, and reference time) as typed handover state, so EKF and UKF
+[components][glossary-component] can replace each other while keeping the estimate.
+
+Switching requires dynamic modification, which the node disables by default.
+Enable it with the node parameter `allow_dynamic_components: true`. For a node
+named `filter` in namespace `/rpp_localization`, the slot services are under
+`/rpp_localization/filter/filter/`. The initial entry is named after its saved
+component, for example `DefaultEkf15`:
+
+```bash
+ros2 service call /rpp_localization/filter/filter/load rpp_ros2/srv/LoadComponent \
+  "{name: ukf, library_name: rpp_localization, component: DefaultUkf15}"
+ros2 service call /rpp_localization/filter/filter/configure rpp_ros2/srv/ConfigureComponent \
+  "{name: ukf}"
+ros2 service call /rpp_localization/filter/filter/switch rpp_ros2/srv/SwitchComponents \
+  "{source: DefaultEkf15, target: ukf, transfer_state: true}"
+```
+
+| Switch | Behavior of the target filter |
+| --- | --- |
+| `transfer_state: true` | Restores state, covariance, and reference time and continues from them. |
+| `transfer_state: false` | Starts without an estimate; the node initializes it from the next measurement, as at startup. |
+
+After a handover the target's replay history is empty, so measurements older
+than the handed-over reference time are dropped as stale. Algorithm-specific
+internals, such as UKF sigma points and weights, come from the target's own
+configuration and are not transferred.
+
+The target validates a handed-over estimate before using it. A non-finite or
+wrongly sized estimate fails the activation with a message, and the slot entry
+goes to `ERROR`; deactivate it, then activate or switch again to recover.
+
 ## Observe slot status
 
 ```bash
@@ -259,3 +295,4 @@ package is required.
 
 [glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
 [glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
