@@ -48,7 +48,7 @@ for prerequisites and recovery.
 
 ```text
 rpp registry describe SOURCE
-rpp registry list [--plugins] [--library LIBRARY] [--json]
+rpp registry list [--type] [--library LIBRARY] [--json]
 rpp registry info LIBRARY::PLUGIN_TYPE
 rpp registry config [list]
 rpp registry config get SETTING_NAME
@@ -56,8 +56,8 @@ rpp registry config set SETTING_NAME VALUE
 ```
 
 `describe` prints parsed metadata and validation results for Python/C++ [plugins][glossary-plugin]
-or Cap'n Proto [plugin types][glossary-plugin-type]. `list` shows plugin types by default; `--plugins`
-selects implementations. `info` reads a registered plugin-type record, using
+or Cap'n Proto [plugin types][glossary-plugin-type]. `list` shows plugin implementations by default;
+`--type` selects plugin types. `info` reads a registered plugin-type record, using
 its qualified name rather than an internal ID. Use the library commands below
 to inspect a plugin implementation.
 
@@ -85,7 +85,7 @@ rpp library info LIBRARY
 rpp library list
 
 rpp library LIBRARY register SOURCE [--type] [--override]
-rpp library LIBRARY refresh PLUGIN [PLUGIN ...]
+rpp library LIBRARY refresh NAME [NAME ...] [--type]
 rpp library LIBRARY unregister NAME [--type]
 rpp library LIBRARY list [--type]
 rpp library LIBRARY info NAME [--type]
@@ -120,10 +120,14 @@ rpp library demo list
 rpp library demo list --type
 rpp library demo info Controller
 rpp library demo refresh Controller
+rpp library demo refresh Controller --type
 ```
 
 Whole-library `refresh` reads `plugins.json`. Named plugin `refresh` uses the
 registered source path and unregisters/re-registers the selected implementation.
+With `--type`, it uses each named type's registered source path and re-registers
+the whole Cap'n Proto file, including every plugin type and supporting struct
+defined there. Multiple names from the same file refresh that file once.
 
 ## Workspaces and scripts
 

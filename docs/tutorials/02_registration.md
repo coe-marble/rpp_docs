@@ -57,7 +57,7 @@ example library contains two [plugin types][glossary-plugin-type] and two Python
 
 ```bash
 # Inspect a shared contract from Tutorial 01 in the initialized common library.
-rpp registry list --library rpp_common
+rpp registry list --type --library rpp_common
 rpp registry info rpp_common::Estimator2D
 
 # List registered libraries and the example library's metadata.
@@ -65,15 +65,15 @@ rpp library list
 rpp library info example_library
 
 # List types, then implementations, in this library.
+rpp registry list --type --library example_library
 rpp registry list --library example_library
-rpp registry list --plugins --library example_library
 
 # Inspect the scalar contract and its implementation separately.
 rpp registry info example_library::ScalarProcessor
 rpp library example_library info AffineProcessor
 ```
 
-`rpp registry list` lists types by default; `--plugins` selects implementations.
+`rpp registry list` lists implementations by default; `--type` selects types.
 The type description records the contract. The [plugin][glossary-plugin] description identifies
 its implementation source, language, and implemented type. For [library][glossary-library]-local
 inspection, use `rpp library example_library list --type` and
@@ -132,8 +132,12 @@ library:
 
 ```bash
 rpp library example_library refresh AffineProcessor
+rpp library example_library refresh ScalarProcessor --type
 rpp library refresh example_library
 ```
+
+Refreshing a type re-registers its complete Cap'n Proto file, including the
+other types and supporting structs defined there.
 
 Inspect its metadata again after refreshing. These commands leave the tutorial
 home, copied sources, and registration available to the following tutorials.

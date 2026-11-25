@@ -137,8 +137,8 @@ For example, the `rpp_control` library declares its controller plugin types in
 	"Plugins": [
         {
 			"Type": "file",
-			"Path": "plugins/controllers/pid_pose_controller.hpp",
-			"Name": "PIDPoseController"
+			"Path": "plugins/controllers/pid_pose_controller_2d.hpp",
+			"Name": "PIDPoseController2D"
 		}
 	],
 	"PluginTypes": [

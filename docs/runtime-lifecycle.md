@@ -71,7 +71,7 @@ current state, transition, last result, guarded-call count, and instance ID.
 Inspect the actual result before choosing recovery.
 
 [Plugins][glossary-plugin] implement `on_configure(context)`, `on_cleanup()`, `on_activate()`, and
-`on_deactivate()`. Stateless callbacks return `CallbackResult`.
+`on_deactivate()`. Lifecycle callbacks return `CallbackResult`.
 Configuration resolves resources and validates parameters; cleanup must handle
 partial configuration. Configuration visits children before their parent.
 Cleanup visits the parent before children in reverse order and continues after
@@ -84,9 +84,9 @@ call these helpers directly. Activation helpers select the exclusive candidate
 or all list entries; a helper failure rolls back only entries it newly activated.
 A later parent callback failure does not automatically undo a successful helper.
 
-`deactivate()` returns `DeactivationResult`; check its `.result` and consume its
-optional owned `.state`. Other lifecycle operations return `CallbackResult`;
-`require_success()` raises `LifecycleError` on failure.
+Lifecycle operations, including `deactivate()`, return `CallbackResult`.
+`require_success()` raises `LifecycleError` on failure. The application constructs
+handover state independently of deactivation.
 
 Explicit `close()` stops remaining active descendants, performs required cleanup,
 and releases owned hosts and transports. Check its result: failed shutdown does
@@ -103,7 +103,7 @@ replacement for deterministic closure.
 
 Applications administer child slots with `load_component`, `configure_component`,
 `activate_component`, `deactivate_component`, `cleanup_component`,
-`unload_component`, `switch_component`, and `reload_component` on the runtime.
+`unload_component`, and `reload_component` on the runtime.
 Loading produces an unconfigured entry; configure and activate it explicitly.
 
 `allow_dynamic_components` defaults to false. Enable it on the builder with a
@@ -121,29 +121,34 @@ runtime = builder.build_script_from_path(script_path)
 ```
 
 Disabling dynamic modification still permits normal lifecycle and full-tree
-shutdown. Switching exclusive candidates, loading, unloading, and reloading
+shutdown. Loading, unloading, and reloading
 require the affected slot's permission.
 
-`switch_component(slot, source, target, transfer_state=True)` stops the source
-and activates/selects the target. Prepare the target and check its status before
-switching. `reload_component(..., transfer_state=False)` reconstructs an instance
-using registered artifacts. The ROS helper does not refresh sources or compile
-[plugins][glossary-plugin] during reload. A failed switch must be inspected; do not assume the old
-source remains active or that failure rolls it back automatically.
+Application code can deactivate components individually and activate configured
+targets with optional caller-provided state. The ROS adapter exposes a batch
+service over those operations. Reload rebuilds and configures the component,
+then reactivates it with supplied handover state only if the old instance was active.
 
 ## Typed handover
 
-A [plugin type][glossary-plugin-type] can bind a local, non-generic state struct using
-`$Anot.lifecycleState("Estimate")`. Python receives the generated dataclass;
-C++ uses an owned `Estimate_Native` value through `LifecyclePlugin<State>`.
-Stateful activation accepts optional state; stateful deactivation returns
-`DeactivationResult<State>`. Stateless callbacks have no state argument.
+A [plugin type][glossary-plugin-type] can declare the optional activation input
+with `$Anot.lifecycleState("Estimate")`. The application provides that value to
+`activate` or through the ROS batch activation factory. Deactivation returns
+`CallbackResult`. An application that needs to carry live controller history
+uses its captured application data. A remote caller sends prepared state with
+activation, switch, or reload requests. The `handoverStates` list follows the
+corresponding instance-ID list. Each entry carries a schema ID and an `AnyPointer`
+payload, decoded by that plugin type's generated adapter. An empty list requests
+cold activation; a nonempty list must contain one envelope per activation ID.
 
-Handover compatibility is checked before transfer. Separate deactivate/activate
-calls do not automatically forward snapshots; the application must retain and
-supply the state. Native handover is supported. Adapted activation,
-deactivation, and typed handover remain unsupported; adapted configure/cleanup
-and ordinary domain-method RPC are available.
+Control laws and actuation mappers expose `getAuxiliaryState()` to read their
+controller-owned history as `StateWithDescriptionStamped`. It contains a
+`StateWithDescription` and the data's `stampNs` in the caller's clock domain.
+The application collects active components' auxiliary fields before deactivation and includes
+the merged list in the handover it constructs for activation. The shared state,
+previous control, and auxiliary values each use `StateWithDescription` to keep
+their numeric values and description together. Previous control is tracked by
+the control script, independently of component auxiliary-state getters.
 
 ## Access, identity, and guarded calls
 

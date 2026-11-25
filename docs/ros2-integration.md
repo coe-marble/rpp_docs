@@ -51,8 +51,8 @@ All service types below belong to `rpp_ros2/srv`:
 | `cleanup` | `CleanupComponent` | `name` |
 | `load` | `LoadComponent` | `name`, `library_name`, `component` |
 | `unload` | `UnloadComponent` | `name`, `timeout_ms` |
-| `reload` | `ReloadComponent` | `name`, `transfer_state`, `timeout_ms` |
-| `switch` | `SwitchComponents` | `source`, `target`, `transfer_state`, `timeout_ms` |
+| `reload` | `ReloadComponent` | `name`, `timeout_ms` |
+| `switch` | `SwitchComponents` | `deactivate[]`, `activate[]`, `timeout_ms` |
 | `list_components` | `ListComponents` | `loaded_only` |
 | `get_status` | `GetSlotStatus` | empty |
 
@@ -62,11 +62,13 @@ snapshots; `get_status` also returns a complete `SlotStatus` snapshot.
 
 `timeout_ms` defaults to 1000; zero requests a nonblocking guarded-call drain.
 This bounds draining active calls, not the execution of plugin lifecycle
-callbacks. `switch` defaults to `transfer_state: true`; `reload` defaults to
-`false`. The runtime checks compatibility before transferring typed handover
-state. Separate deactivate/activate requests do not transport handover state.
+callbacks. The application can supply a factory to the ROS adapter for a batch
+switch. The factory runs in-process and receives the type of state the plugin accepts.
+Without a factory, targets start fresh. Switch lists contain loaded instance IDs
+from `list_components`. They are independent and may have different lengths.
+Reload reactivates the replacement only when the old instance was active.
 
-Dynamic load, unload, reload, and switching require the builder to enable dynamic
+Dynamic load, unload, and reload require the builder to enable dynamic
 modification for that slot. A request does not enable it. Reload reconstructs
 the runtime from registered artifacts; it does not refresh the plugin registry
 or compile plugin sources.
@@ -123,7 +125,7 @@ Switch from the active `ekf` instance to the inactive `ukf` instance:
 
 ```bash
 ros2 service call /robot/controller/filter/switch rpp_ros2/srv/SwitchComponents \
-  "{source: ekf, target: ukf, transfer_state: true, timeout_ms: 1000}"
+  "{deactivate: ['<ekf-instance-id>'], activate: ['<ukf-instance-id>'], timeout_ms: 1000}"
 ```
 
 To include unloaded registrations in a listing:
@@ -139,7 +141,7 @@ Other operations use their corresponding service types:
 ros2 service call /robot/controller/filter/activate rpp_ros2/srv/ActivateComponent \
   "{name: ukf}"
 ros2 service call /robot/controller/filter/reload rpp_ros2/srv/ReloadComponent \
-  "{name: ukf, transfer_state: false}"
+  "{name: ukf}"
 ros2 service call /robot/controller/filter/deactivate rpp_ros2/srv/DeactivateComponent \
   "{name: ukf, timeout_ms: 1000}"
 ros2 service call /robot/controller/filter/cleanup rpp_ros2/srv/CleanupComponent \
@@ -238,11 +240,11 @@ publish only that slot.
 ## Execution and installation
 
 Construct and spin on the runtime's lifecycle owner thread using a single-threaded
-executor. Services and timers use a mutually exclusive callback group, defaulting
-to the node's group. A mutually exclusive group alone does not guarantee thread
-affinity in a multi-threaded executor: callbacks on another thread are rejected
-before accessing the runtime. Concurrent RPP permits guarded worker calls while
-lifecycle/membership operations still belong to one owner.
+executor. Services and timers use the application's callback group or the node's
+default group. The executor determines which thread runs callbacks, and the helper
+checks the owner thread before accessing the runtime. Concurrent RPP permits
+guarded worker calls while lifecycle and membership operations remain on that
+owner thread.
 
 Keep the node and runtime alive. Do not move a C++ runtime while its helper
 exists. Close/destroy the helper after its callbacks stop, before destroying the

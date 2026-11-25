@@ -26,10 +26,9 @@ UNCONFIGURED -> configure -> INACTIVE -> activate -> ACTIVE
 ACTIVE -> deactivate -> INACTIVE -> cleanup -> UNCONFIGURED
 ```
 
-Deactivation returns `DeactivationResult`: check `result` before passing `state`
-to another runtime's `activate(state)`. That snapshot outlives the source's
-configuration. A runtime state such as `ACTIVE` and an application handover
-value such as total `7` serve different purposes.
+The caller reads the running total with `getState()`, checks the deactivation
+result, and supplies the snapshot to the target's `activate(state)`. The
+snapshot outlives the source's configuration.
 
 ## Implementation
 
@@ -72,7 +71,7 @@ Call after shutdown: accumulator is inactive
 ```
 
 The target continues the transferred total by processing `5`. It then
-explicitly deactivates and reactivates with its own exported state, and processes
+reads its own snapshot, deactivates, reactivates with that state, and processes
 `1`. A rejected non-finite input leaves the total unchanged. Standard Python
 `ExitStack` closes both runtimes on exit, including if an operation raises.
 A retained plugin reference rejects calls after shutdown.
