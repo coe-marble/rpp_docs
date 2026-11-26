@@ -82,13 +82,6 @@ runtime to load the implementation using its native language support while
 the Cap'n Proto contract keeps the exchanged data and methods language-neutral.
 
 
-## Local and remote execution
-
-The ordinary adapted path uses a local component-server process.
-Remote-machine placement remains planned; do not infer deployment support
-from the existence of RPC. See [component connections](component_connection.md)
-for host ownership, nested calls, result lifetimes, and lifecycle limitations.
-
 ## Design rules
 
 - Plugin types are defined inside plugin libraries.
@@ -132,11 +125,10 @@ Plugin contracts can declare an owned handover state with
 registrator generates Python dataclasses and C++ native values for lifecycle
 callbacks. Stateless types take no activation-state argument.
 
-See [typed handover](runtime-lifecycle.md#typed-handover) for callback results and
-support boundaries. Adapted configure/cleanup is available; adapted activation,
-deactivation, and state handover remain pending. Generated clients and servers
-must match their runtimes. Regenerate adapters and rebuild downstream C++ code
-when upgrading the protocol or generated interface ownership rules; see
+See [typed handover](runtime-lifecycle.md#typed-handover) for preparing the state
+passed to activation, and [component connections](component_connection.md) for
+calls across a language boundary. Regenerate adapters and rebuild dependent C++
+code when changing the protocol; see
 [registry compatibility](registry.md#generated-code-compatibility).
 
 C++ code using only the native contract includes `<Type>.hpp`. Code constructing

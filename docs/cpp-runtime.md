@@ -1,14 +1,13 @@
 # C++ runtime
 
-`rpp_cpp` provides the C++ plugin runtime and component server. This guide owns
-application-facing API usage, instance identity, threading policies, and
-subcomponent control.
+`rpp_cpp` provides the C++ plugin runtime and component server. A runtime loads
+the configured plugin tree; the application configures and activates it, calls
+its methods, and closes it when finished. The examples below show runtime
+access, instance identity, threading, and child-component control.
 
-- [Installation](getting-started.md#build-the-c-runtime) owns build prerequisites and commands.
-- [Runtime lifecycle](runtime-lifecycle.md) defines shared transition semantics.
-- [Component connections](component_connection.md#c-rpc-result-lifetime) defines RPC ownership and result lifetimes.
-- [Construction and ownership](cpp-context-flow.md) explains internal assembly and shutdown.
-- [Testing support](testing.md#native-runtime-scenarios) maps behavior to test sources.
+The examples assume the runtime has been built and its library path is available
+in the environment. The [installation guide](getting-started.md#build-the-c-runtime)
+shows that setup.
 
 ## Runtime, plugin context, and managed slots
 
@@ -106,8 +105,6 @@ allow normal type checks.
 Pass validators after the clock/permission arguments in the chosen constructor.
 `runtime.set_registration_validator(slot, validator)` changes future admission
 without evicting existing entries. Rejection leaves other entries untouched.
-Adapted configure/cleanup is supported; adapted activation/deactivation and
-typed state handover remain pending.
 
 Plugins configure resources in `on_configure(const ComponentContext &)` and
 release them in `on_cleanup()`. Both callbacks return `rpp::CallbackResult`;
@@ -146,16 +143,16 @@ or shutdown. `ComponentContext::activate_subcomponents()` activates selected exc
 all list entries, without handover state. If this helper fails, it rolls back only
 entries newly activated by that helper. A later failure in the parent's callback
 does not automatically undo a successful helper call; the plugin controls recovery.
-`ComponentContext::deactivate_subcomponents()` visits active entries in reverse order, discards subcomponent
-snapshots, continues after errors, and returns the first failure. Each subcomponent still
+`ComponentContext::deactivate_subcomponents()` visits active entries in reverse
+order, continues after errors, and returns the first failure. Each subcomponent
 decides whether to manage its own descendants.
 
 Script contexts have no plugin callbacks. Applications explicitly call
 `activate_subcomponents()` and `deactivate_subcomponents()` on them. `close()` and unload
 remain explicit full-tree teardown operations: they stop remaining active
 descendants before cleanup and release, even if normal callbacks left them running.
-Configure/cleanup propagation is unchanged. Adapted activation/deactivation remains
-unsupported; remote configure/cleanup is already implemented.
+For adapted components, lifecycle calls run in the hosting process. See
+[component connections](component_connection.md#lifecycle-across-the-boundary).
 
 ## Component instance identity
 
@@ -241,8 +238,7 @@ if (!camera.is_active()) {
   camera.activate().require_success();
 }
 auto instance = camera.get_instance<Camera>();
-auto stopped = camera.deactivate();
-stopped.result.require_success();
+camera.deactivate().require_success();
 ```
 
 The accessor returns `SubcomponentContext`, which exposes only `activate()`,

@@ -41,5 +41,5 @@ repositories:
     entry_points: []
   - id: rpp_navigation
     path: src/rpp_navigation
-    role: Navigation package scaffold; no navigation implementations yet.
+    role: Navigation package.
     entry_points: []

@@ -85,11 +85,12 @@ When `library_name` is empty, `component` is a workspace component-folder path,
 as accepted by `runtime.load_component()`. An empty folder reuses the named
 registration's previous folder, if one exists.
 
-For example, register a saved UKF instance under the local name `ukf`:
+For example, load the bundled generic UKF component by its saved ID under the
+local name `ukf`:
 
 ```bash
 ros2 service call /robot/controller/filter/load rpp_ros2/srv/LoadComponent \
-  "{name: ukf, library_name: rpp_localization, component: DefaultUkf15}"
+  "{name: ukf, library_name: rpp_localization, component: 44444444-4444-4444-8444-444444444444}"
 ```
 
 The equivalent folder-based request is:

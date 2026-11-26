@@ -1,10 +1,9 @@
 # Shared descriptors and numeric runtime
 
-This page defines the shared layout and buffer conventions. The
-[method reference](interface-methods.md) defines individual calls, and
-[component boundaries](component-boundaries.md) defines their responsibilities.
-The source of truth for field declarations is
-[`common/descriptions.capnp`](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/common/descriptions.capnp).
+Plugins exchange flat numeric arrays. Their descriptions tell the application
+what each part of an array means, so it can connect fields and allocate the
+right buffers before execution. This page explains that preparation and the
+packing used by samples, matrices, and reference horizons.
 
 ## Binding route
 
@@ -44,9 +43,10 @@ For example, a spatial state can contain:
 | `base.orientation` | Quaternion / orientation | [3, 7) | [3, 6) |
 | `base.velocity` | Euclidean size 3 / linear velocity | [7, 10) | [6, 9) |
 
-Its stored width is 10 and tangent width is 9. Estimate covariance therefore
-has 81 entries. This describes coordinates; an estimator must separately support
-their numerical operations and covariance treatment.
+Its stored width is 10 and tangent width is 9. A quaternion stores four
+coefficients, while a small orientation change needs three rotation components.
+That is why the stored state and its local-error vector have different widths.
+A covariance in these tangent coordinates has 9 × 9 = 81 entries.
 
 Names must be unique and nonempty within a layout. Invalid kinds, quantities,
 sizes, and excessive width fail preparation. Numeric validation checks selected
@@ -108,6 +108,21 @@ time arithmetic. Physical watchdogs and thread scheduling use a monotonic clock.
 reference-major order. Every horizon starts at zero and strictly increases.
 Quaternion coefficients have identical offsets.
 
+For example, take a reference with two scalars, x and yaw, and request samples
+now, in 0.5 seconds, and in 1 second:
+
+```text
+horizonLength    = 3
+horizonOffsetsNs = [0, 500000000, 1000000000]
+reference        = [1.0, 1.5, 2.0,  0.0, 0.1, 0.2]
+                    x at each time   yaw at each time
+```
+
+The first three values are the x horizon; the next three are the yaw horizon.
+With `horizonLength = 0`, the same current reference is simply `[1.0, 0.0]`.
+If the two scalars need different sample times, supply six offsets instead of
+three, in that same reference-major order.
+
 `ReferenceHorizon` validates this representation. `ControlLawLayout` combines
 it with the controller's flat layouts. The control script prepares generator
 sampling times and controller gather indices outside the tick.
@@ -122,6 +137,11 @@ C++ `field_route` and Python `field_route(source, destination)` prepare source
 indices in destination order. Extra source fields and different ordering are
 allowed when the required fields are compatible.
 `validate_required_fields` checks compatibility without building a route.
+
+Suppose a producer stores `[vx, vy, wz, x, y, yaw]`, while a pose controller
+requires `[x, y, yaw]`. Matching the described fields produces indices
+`[3, 4, 5]`. Each tick gathers those positions into the controller's prepared
+input buffer. Field-name lookup happens during preparation, not for every tick.
 
 `SignalRouter` registers numeric signals and source layouts, connects field
 subsets, and prepares buffers. Conflicting writers and missing/incompatible
@@ -159,16 +179,15 @@ their backing storage for as long as they are in use. Buffer pools, workspaces,
 queues, and replay checkpoints are prepared before execution; pool exhaustion
 returns failure or defers work rather than allocating a replacement.
 
-The `$realtime` annotation identifies intended numeric methods. It does not by
-itself prove allocation-free or bounded execution. Check the selected plugin,
-generated wrappers, active-call guards, and application path. RPC and ROS
-conversion/publication have different costs and remain outside numeric workers.
+The `$realtime` annotation marks the schema's numeric methods. In control and
+localization, the numeric worker reuses prepared buffers; the ROS executor
+handles message conversion and publication. Keep construction, resizing, and
+configuration work outside those numeric calls.
 
 Resolve components through RPP contexts and use guarded calls where lifecycle
 can overlap execution. Direct instance access supplies no lifecycle guard.
 All callers must respect view lifetimes and serialize calls according to their
 configured threading policy.
 
-See [control execution](control/control-stack-and-message-map.md) and
-[estimation execution](estimation/generic-estimation-and-localization.md) for
-the coordinators that apply these conventions.
+The [method reference](interface-methods.md) uses these dimensions and packing
+rules when describing each call's arguments and results.

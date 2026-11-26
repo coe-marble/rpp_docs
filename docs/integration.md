@@ -50,7 +50,6 @@ python3 -m unittest discover -s .github/scripts -p 'test_*.py'
 ## Design history
 
 The [design-history index](plans/README.md) links lifecycle proposals and
-checkpoint evidence. Their old APIs and test results do not describe every
-current revision; the [current status](status.md) and guides take precedence.
+checkpoint notes. Use the [runtime guide](runtime-lifecycle.md) for the API.
 
 [glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

@@ -151,11 +151,11 @@ installed libraries. Use migration to preserve an existing installation.
 
 ## Generated-code compatibility
 
-The removed `initialize()` API, managed lifecycle interfaces, and RPC control
-protocol require matching generators, Python/C++ runtimes, and compiled adapters.
-Regenerate dependent libraries and rebuild downstream C++ code together.
-Generated adapter clients support ordinary calls and remote configure/cleanup;
-remote activation/deactivation and typed state handover remain pending.
+After changing generated interfaces or the lifecycle protocol, regenerate
+dependent libraries and rebuild their C++ consumers. Clients, servers, and
+runtimes must use matching generated code. See
+[component connections](component_connection.md#lifecycle-across-the-boundary)
+for lifecycle calls and handover across adapters.
 
 C++ interface headers (`<Type>.hpp`) keep adapter implementations separate.
 Code constructing adapters includes `<Type>_Adapter_Client.hpp` or

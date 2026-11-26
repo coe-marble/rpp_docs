@@ -17,8 +17,8 @@ the relevant guide.
 - Leave links at former guide locations when moving documentation.
 - Label historical plans and checkpoint results explicitly; current guides
   describe the implementation in the supported integration checkout.
-- Keep [implementation status](status.md) and the repository catalog current.
-  Put unimplemented proposals under [plans](plans/README.md), not in an API guide.
+- Update the repository catalog when adding or moving a package. Keep design
+  discussions under [plans](plans/README.md).
 
 ## Links and commands
 
@@ -26,6 +26,10 @@ Use relative links between pages in this repository. For files in another
 repository, link to that repository's actual GitHub URL and branch so the links
 also work when browsing `rpp_docs` on its own. Preserve old guide paths as short
 pointers when useful for existing links.
+
+Explain the subject on the page, using concrete inputs, calls, and outputs.
+Use links where an explanation connects to another topic or defines a glossary
+term. Readers should not need to open several pages to understand one workflow.
 
 ## Glossary links
 
@@ -50,27 +54,23 @@ Historical plans retain their original terminology.
 
 ## Command examples
 
-State the working directory, Python environment, ROS overlay, and registry home
-required by command examples. Distinguish preparation/build instructions from
-measurements and distinguish implementation status from verified results.
-Review examples against current source APIs; older package prose may lag.
-For shared interfaces, compare method names and dimensions with the schema.
-Do not copy complete signatures into several guides or infer implementation
-support from a schema's presence.
+Give readers the working directory and environment they need, then show the
+command and what it does. Check names and arguments against the code.
+For shared interfaces, compare methods and dimensions with the schema.
+Describe existing behavior; leave guesses and suggested features out of usage
+instructions. Keep complete method descriptions in one place and link to them.
 
 ## Review
 
-Review local links and Markdown changes. The existing documentation link CI
-checks the integration layout. When permitted by the task, the dependency-free
-inventory checker can be run from `rpp_docs`:
+Check that links lead to the intended page and that examples use the current
+API. From `rpp_docs`, check the repository catalog with:
 
 ```bash
 python3 tools/check_repositories.py --workspace ..
 ```
 
-It checks that catalog paths exist; it does not establish API correctness or
-runtime validation. Follow task-specific restrictions on tests/builds and report
-what was actually checked.
+The checker reports catalog entries whose directories are missing. CI also
+checks local Markdown links.
 
 ## Coordinated changes
 

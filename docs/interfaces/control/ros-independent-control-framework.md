@@ -1,37 +1,33 @@
-# Control dependencies and extensions
+# How the control packages fit together
 
-The current [control execution guide](control-stack-and-message-map.md) describes
-implemented routing and ROS integration. This page records dependency boundaries;
-it does not introduce a second control contract or implementation sequence.
+The control script runs reference generators, controllers, and actuation
+mappers. RPP supplies their configuration and lifecycle. The ROS node receives
+measurements and goals, passes them to the script, and publishes its outputs.
 
-## Dependency boundaries
-
-| Layer | Responsibility |
+| Package | Responsibility |
 | --- | --- |
 | `rpp_interfaces` | Shared numeric contracts and field-layout/routing helpers. |
-| `rpp_common` | Common annotations, messages, and neutral utilities. |
-| `rpp_cpp` / `rpp_py` | Component construction, parameters, lifecycle, guarded calls, and adapters. |
-| `rpp_control` | Control script, reference generators, controllers, mappers, monitors, and optional ROS adapter. |
-| `rpp_localization` | Generic estimation, navigation models, and ROS sensor/estimate adapters. |
-| MORE libraries | Dynamics/sensor definitions, graph utilities, and simulation. |
+| `rpp_common` | Common annotations, messages, and utilities. |
+| `rpp_cpp` / `rpp_py` | Component construction, parameters, lifecycle, calls, and adapters. |
+| `rpp_control` | Control script, reference generators, controllers, mappers, monitors, and ROS adapter. |
+| `rpp_localization` | Estimation algorithms, navigation models, and sensor/estimate adapters. |
+| MORE libraries | Dynamics and sensor models, graph utilities, and simulation. |
 
-The numeric control core does not require ROS message handling or CasADi.
-The ROS adapter owns subscriptions, services, actions, conversion, and publication.
-Selecting a graph-backed model or optimization plugin brings that extension's
-dependencies into the application.
+The numeric control loop runs separately from ROS message handling. The ROS
+executor performs conversion and publication; the worker calls the script.
 
-## Future extensions
+For example, a pose goal arrives as a ROS message. The node checks its frame,
+ownership, and deadline, converts it to the configured goal layout, and stages
+it in the reference generator. The worker then samples that generator and runs
+the controllers. ROS message types stay at the adapter boundary; controllers
+receive the flat state and reference arrays declared by their interfaces.
 
-Prepared CasADi model/derivative adapters, MPC, and articulated or combined
-vehicle/arm compositions remain extensions. Proposed package names such as
-`rpp_control_casadi`, `rpp_control_mpc`, and `rpp_estimation` do not identify
-implemented packages in the current checkout.
+This also explains the package split. A controller implementation lives in
+`rpp_control`, while its shared contract lives in `rpp_interfaces`. Applications
+can use that contract without importing the controller's implementation. The
+runtime loads the selected implementation from its registration and workspace
+configuration.
 
-Reuse shared physical definitions across simulation, estimation, and control
-where their state conventions, frames, inputs, and integration methods agree.
-Each consumer keeps its own mutable state and workspace. A simulation model is
-not automatically a compatible estimator or controller model.
-
-See [implementation status](../../status.md) for available source and remaining
-integration work, and [component boundaries](../component-boundaries.md) for
-the responsibilities an extension must preserve.
+See [control execution](control-stack-and-message-map.md) for the loop and
+[component boundaries](../component-boundaries.md) for what each plugin receives
+and returns.

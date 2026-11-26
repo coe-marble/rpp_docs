@@ -1,9 +1,9 @@
 # Component boundaries
 
-Each configured plugin declares its own layouts through `getDesc()`.
-The application prepares compatible routes and executes components through
-RPP lifecycle and guarded calls. The shared interfaces do not create another
-plugin loader or lifecycle system.
+Each plugin handles one part of the system: buffering state, generating a
+reference, calculating control, mapping actuation, or estimating motion.
+Its `getDesc()` tells the application what numeric fields it needs and produces.
+The application uses those descriptions to connect the parts.
 
 ## Responsibilities
 
@@ -43,10 +43,9 @@ flowchart LR
     Model -.-> Law
 ```
 
-This shows compatible roles, not a mandatory process topology. The current
-control ROS node publishes actuator commands; hardware or simulation adapters
-consume them. A `HardwareIO` contract does not mean the control node has already
-integrated every physical driver.
+The control ROS node publishes actuator commands. An adapter consumes those
+values and passes them to simulation or hardware. Localization can run in
+another process and supply filtered state through ROS.
 
 ## Model
 
@@ -78,6 +77,3 @@ Generator feature bits belong to `reference/constants.capnp`, model features
 to `model/constants.capnp`, hardware stop modes to `hardware/constants.capnp`,
 and shared status codes to `common/constants.capnp`. Mission decisions use
 booleans plus status, rather than a generator completion/progress enum.
-
-For current implementations and remaining integration work, see
-[implementation status](../status.md).

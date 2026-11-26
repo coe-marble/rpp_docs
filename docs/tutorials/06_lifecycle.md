@@ -49,10 +49,10 @@ and `4`.
 The handover uses the public runtime methods explicitly:
 
 ```python
-handover = source.deactivate()
-handover.result.require_success("deactivate source")
+handover = source.get_instance().getState()
+source.deactivate().require_success("deactivate source")
 source.cleanup().require_success("cleanup source")
-target.activate(handover.state).require_success("activate target with state")
+target.activate(handover).require_success("activate target with state")
 ```
 
 Look for:
@@ -76,9 +76,8 @@ reads its own snapshot, deactivates, reactivates with that state, and processes
 `ExitStack` closes both runtimes on exit, including if an operation raises.
 A retained plugin reference rejects calls after shutdown.
 
-This example uses native Python components. Remote adapter activation and
-handover are not supported. Cleanup resets the instance's total; saved component
-files do not persist the exported handover payload.
+This example uses native Python components. Cleanup resets the instance's
+total; saved component files do not persist the handover payload.
 
 ### Inspect the result
 

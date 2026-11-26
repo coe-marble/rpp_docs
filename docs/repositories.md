@@ -16,7 +16,7 @@ submodule `rpp_docs`. The implementation inventory is declared in
 | `rpp_testing` | Shared fixtures and test libraries | [Testing support](testing.md) |
 | `rpp_demos` | Runnable tutorials, demos and benchmarks | [Tutorials](tutorials/README.md), [benchmarks](benchmarks/README.md) |
 | `rpp_ros2` | Slot command services and status topics | [ROS 2 integration](ros2-integration.md) |
-| `rpp_navigation` | Navigation scaffold; no implementations yet | [Implementation status](status.md) |
+| `rpp_navigation` | Navigation package | [Package README](https://github.com/coe-marble/rpp_navigation/blob/develop/README.md) |
 
 Each source repository keeps a short README describing its purpose and linking
 to the central guides. Runnable examples, schemas, fixtures, and source-level

@@ -1,8 +1,8 @@
 # C++ context construction and lifecycle
 
-This describes the implementation in the current integration checkout. Native
-managed lifecycle is implemented; adapted activation and typed handover remain
-unsupported. This documentation update does not establish build/test validation.
+This guide follows a saved component from its description and parameters to a
+loaded runtime. It explains which objects own the plugin, its child slots, and
+any external processes, and how they are released on shutdown.
 
 ## Application entry points
 
@@ -149,9 +149,10 @@ or all loaded list entries, without handover state. Only a failed helper call
 rolls back entries that it newly activated; previously active entries are preserved.
 If the helper succeeds but the parent callback later fails, subcomponent states remain
 under plugin control. Deactivation of contained components visits active entries
-in reverse order, continues after failures, and returns the first error without
-subcomponent handover snapshots. Each subcomponent's own callbacks independently decide whether
-to transition its descendants. Neither helper changes dynamic permissions.
+in reverse order, continues after failures, and returns the first error.
+The caller prepares any handover state before deactivation. Each subcomponent's
+own callbacks decide whether to transition its descendants. Neither helper
+changes dynamic permissions.
 
 No generic update loop starts. The application retains its timer/update loop.
 
@@ -259,15 +260,16 @@ active code.
 For an adapted node, the constructor helper prepares `ExternalComponentProcess`, loads an
 adapter client and starts/connects the hosting process. Runtime construction
 attaches that proxy and its process owner without creating local subcomponent slots.
-The host constructs the real component tree through its own runtime-builder facade. Configure/cleanup travel through `RpcControlClient` and
-`plugin_runtime.capnp` to the real context in that process.
+The host constructs the real component tree through its own runtime builder.
+Lifecycle commands travel through `RpcControlClient` and `plugin_runtime.capnp`
+to that runtime. Activation carries any prepared handover state through the
+plugin type's generated codec.
 The C++ endpoint is `RpcControlService` in `rpc_control_service.hpp`. This is RPC
 control, separate from the owning `ComponentRuntime`. `PluginRuntime` remains the
 shared generated wire interface name for compatibility with Python consumers.
 
-Transport preparation during building is not plugin activation. Adapted
-activation/deactivation and state handover are still explicitly unsupported in
-this increment. Native C++ trees create no RPC executor or external process.
+Building prepares the transport; activation is a separate lifecycle call.
+Native C++ trees create no RPC executor or external process.
 
 ## Source map
 

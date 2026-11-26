@@ -417,7 +417,6 @@ Read `EstimatorDesc` after configuration. `state` describes the owned estimate,
 `inputs` its known input, and `measurements` the indexed measurement layouts.
 The implementation resolves model slots, validates required features, and prepares
 matrices and history during configuration. The schema has no estimator `bind()`.
-A quaternion descriptor alone does not establish quaternion-filter support.
 
 ### initialize
 
@@ -483,8 +482,7 @@ component instance and introduces no separate loader.
 ## HardwareIO
 
 Schema: [hardware/hardware_io.capnp](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/hardware/hardware_io.capnp).
-This handles numeric acquisition/commands. Generic image/scan payloads remain
-future contracts.
+This interface reads numeric measurements and writes actuator commands.
 
 ### getDesc
 

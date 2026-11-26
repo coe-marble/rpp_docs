@@ -1,30 +1,59 @@
-# RPP integrated demos
+# Examples
 
-Status: the integrated rpp_demos localization demo is planned. Existing
-[rpp_localization launch files and bag tooling](interfaces/estimation/generic-estimation-and-localization.md)
-are separate implemented sources. See [implementation status](status.md).
+The scalar-processing examples show how RPP separates a plugin's code,
+configuration, and running state. They use two plugins: an affine processor
+and an accumulator.
 
-The first demo will be `localization/`: run multiple localization algorithms
-under ROS 2 and demonstrate RPP lifecycle management through `rpp_ros2`.
-Reuse the existing localization contracts and implementations from
-`rpp_localization`; keep algorithm implementation in that library.
+## Processing a stream
 
-Run EKF and UKF as separately configured [components][glossary-component] with the same input stream
-and distinct estimate topics. Demonstrate independent activation and
-deactivation, reactivation, and cleanup. Stopping one algorithm should leave
-the other running. State explicitly whether reactivation resets or retains its
-estimate, according to the selected [plugin][glossary-plugin]'s behavior.
+The processor calculates `gain * value + offset`. With gain 2 and offset 1,
+it turns inputs 1, 2, and 3 into 3, 5, and 7. The accumulator adds each processed
+value to its running total.
 
-The demo will own launch files, workspace configuration, deterministic sample
-inputs, ROS CLI examples, and expected observations. `rpp_ros2` will own the
-ROS interface to RPP lifecycle management. Use topics for measurements,
-estimates, and lifecycle state/events; use request/response services for
-lifecycle commands so CLI callers receive transition results. Inspect the
-available `rpp_ros2` API before fixing endpoint names or message types.
+| Input | Processor result | Accumulated total |
+| --- | --- | --- |
+| 1 | 3 | 3 |
+| 2 | 5 | 8 |
+| 3 | 7 | 15 |
 
-Use `ros2 topic` to inspect data and state and the bridge's supported CLI
-command path to request transitions. Explain the relationship between RPP
-component state and any ROS node lifecycle; avoid assuming they are identical.
+The script coordinates the calls: read an input, call the processor, pass its
+result to the accumulator. Each component keeps its own configuration and
+lifecycle. The script's saved configuration chooses which components fill the
+two slots.
 
-[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+After registering the tutorial library and setting `RPP_HOME` as described
+in the [tutorial setup](tutorials/README.md#prerequisites-and-execution), run
+the pipeline from the `rpp_demos` checkout:
+
+```bash
+python3 tutorials/05_scripts/run.py
+```
+
+The driver prepares the saved configuration, builds a script runtime,
+configures and activates its components, and prints the results above.
+
+## Moving state between instances
+
+The accumulator's total belongs to its running instance. A second accumulator
+starts with its own total. To continue work in that second instance, the
+application captures the first total, deactivates the first instance, and
+activates the second with that handover value.
+
+For example, transferring a total of 7 and then processing 5 produces 12.
+This is the operation demonstrated by `tutorials/06_lifecycle/run.py`.
+The [lifecycle walkthrough](tutorials/06_lifecycle.md) explains the calls and
+the effect of cleanup on the accumulated state.
+
+## Larger applications
+
+Localization applies the same composition pattern to an estimator and its
+model. ROS sensor callbacks produce measurements; the estimator worker updates
+state and covariance; publication returns filtered odometry. The
+[estimation guide](interfaces/estimation/generic-estimation-and-localization.md)
+explains that flow and late-measurement replay.
+
+The communication benchmark uses a request/reply workload instead. It sends a
+sequence number and a payload, receives the full payload back, and records
+round-trip time and completed exchanges. The
+[communication guide](benchmarks/communication.md) explains how to run the
+Python/C++ combinations and interpret their results.

@@ -59,7 +59,7 @@ automatically; workspace data remains under `$RPP_HOME/tutorials`.
 See [component folders and workspace layout](../workspaces.md#workspace-and-rppws-folder-layout)
 for copying/reusing a component, and
 [Python parameter definitions and YAML](../workspaces.md#parameters-are-python-definitions)
-for executable configuration and the planned shared-parameter tutorial.
+for executable configuration and shared parameter data.
 
 ### Inspect the result
 

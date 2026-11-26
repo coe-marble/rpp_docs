@@ -1,74 +1,127 @@
-# System architecture
+# How RPP loads and runs components
 
-RPP separates contracts, registration, composition, and managed execution.
-Independent repositories share generated interfaces and a configurable registry
-home. Libraries own source, the home owns registration/generated artifacts,
-and workspaces own saved [component][glossary-component] configuration and script assignments.
+RPP keeps plugin source, saved application configuration, and running instances
+separate. To see why, consider a saved scalar processor configured with gain 2
+and offset 1.
 
-```mermaid
-flowchart TD
-    User[Application or developer] --> CLI[rpp CLI / GUIs]
-    CLI --> Registry[rpp_plugin_registrator]
-    CLI --> Workspace[rpp_orchestrator]
-    Common[rpp_common contracts] --> Registry
-    Interfaces[rpp_interfaces robotics contracts] --> Registry
-    Registry --> Home[RPP_HOME: metadata and generated artifacts]
-    Workspace --> Saved[Workspace .rppws: configurations and parts]
-    Home --> Builder[ComponentRuntimeBuilder]
-    Saved --> Builder
-    Builder --> Runtime[ComponentRuntime / ScriptRuntime]
-    Runtime --> Slots[Managed component slots]
-    Slots --> Native[Native plugin instances]
-    Slots --> Adapter[Adapter and external component process]
-    Adapter --> Hosted[Hosted plugin subtree]
-    ROS[rpp_ros2 services and status] --> Runtime
+Its source code belongs to a library. Registration tells RPP where to find that
+library and prepares the generated interfaces and native binaries. A workspace
+then saves a component selecting that plugin and those two parameter values.
+The application loads the saved component to create a running instance.
+
+## What is stored where?
+
+The library contains source files and `plugins.json`. That file lists the
+Cap'n Proto files declaring plugin types and the Python/C++ files implementing
+them. Linking a library keeps its source in your checkout.
+
+The RPP home, selected by `RPP_HOME`, stores registrations, generated
+interfaces, and compiled registered artifacts. The default is `~/.rpp`.
+It tells the runtime which code implements a registered plugin name.
+
+The workspace's `.rppws` directory stores saved components and script
+configurations. A component folder contains its identity, parameters, and child
+assignments. For example, its `params/parameters.py` can contain:
+
+```python
+class ComponentParameters:
+    gain = 2.0
+    offset = 1.0
 ```
 
-## Responsibilities
+A second component can select the same plugin with different values. Changing
+one component's file does not change the other component or the plugin source.
+The running instance reads resolved parameters during configuration.
 
-| Layer | Owner | Responsibility |
-| --- | --- | --- |
-| Common foundations | `rpp_common` | Shared annotations, messages, and parameter declarations |
-| Robotics contracts | `rpp_interfaces` | Numeric interfaces and field layout/routing helpers for control, models, estimation, and hardware |
-| Registration | `rpp_plugin_registrator` | Library discovery, descriptions, validation, generated interfaces/adapters |
-| Composition | `rpp_orchestrator` | Saved components, parameters, script configurations, workspace GUI |
-| Execution | `rpp_py`, `rpp_cpp` | Runtime construction, slot lifecycle, native loading and external hosts |
-| Commands | `rpp_cli` | Registry/library/workspace commands and GUI launchers |
-| ROS integration | `rpp_ros2` | Per-slot service commands and status snapshots over ROS 2 |
-| Examples and measurements | `rpp_demos` | Runnable tutorial and benchmark sources |
-| Verification support | `rpp_testing` | Shared fixtures, example [plugins][glossary-plugin] and mock workspaces |
+## Loading the saved component
 
-Robotics libraries implement these shared contracts. Their package ownership
-and remaining extensions are described in [implementation status](status.md).
+The application gives a component folder to a runtime builder. The builder
+resolves the plugin name, loads its parameter definitions, constructs the
+instance, and constructs its assigned children.
 
-## From source to a running component
+For a native Python component:
 
-1. Define an annotated Cap'n Proto [plugin type][glossary-plugin-type] inside a library.
-2. Implement it in Python or C++ and declare its sources in `plugins.json`.
-3. Register the library to validate metadata and generate language artifacts.
-4. Create a saved workspace component with parameters and subcomponent assignments.
-5. Build a runtime from the saved component or a script configuration.
-6. Configure resources, then activate the desired native components explicitly.
-7. Call the plugin contract from the application's own loop and close the runtime
-   deterministically when done.
+```python
+from rpp_py.context_builder import ComponentRuntimeBuilder
 
-A component root has a fixed owning slot. A script directly owns its slot
-collection and has no plugin instance. Slot managers validate transitions and
-administer membership. Applications use runtime handles; plugins receive
-contexts for services and child access. Composite plugins decide how ordinary
-activation/deactivation propagates to their children; full shutdown stops
-remaining descendants explicitly.
+# Path to a saved AffineProcessor component with gain 2 and offset 1.
+component_path = "/path/to/saved/processor"
+runtime = ComponentRuntimeBuilder().build_component_from_path(component_path)
 
-Purely native trees need no RPC infrastructure. Foreign-language boundaries
-create adapter roots hosted by external processes, each owning its subtree.
-Remote configure/cleanup is supported; adapted activation/deactivation and typed
-handover remain pending. See [runtime lifecycle](runtime-lifecycle.md) and
-[connections](component_connection.md) for current boundaries.
+try:
+    runtime.configure().require_success()
+    runtime.activate().require_success()
 
-The ROS helper calls public runtime operations and preserves slot permissions.
-It does not replace application ownership of root configuration, lifecycle safe
-points, or shutdown. RPP component states are distinct from ROS node lifecycle.
+    processor = runtime.get_instance()
+    result = processor.process(3.0)  # 2 * 3 + 1 = 7
+finally:
+    runtime.close().require_success()
+```
 
-[glossary-plugin-type]: glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+The runtime is the application's handle for lifecycle and administration.
+The plugin receives a `ComponentContext` during configuration. It uses that
+context to read parameters, access logging and time, and work with its children.
+
+## Why construction, configuration, and activation are separate
+
+Construction creates the objects and any required transports. Configuration
+validates parameters and prepares resources. For the scalar processor, that
+means reading and storing gain and offset. For a controller, it also means
+preparing layouts, routes, buffers, and algorithm history.
+
+Activation lets the component begin its work. The application chooses when
+to activate, so it can first finish preparing the rest of the system.
+Deactivation stops the component's work while keeping it configured. Cleanup
+releases configuration resources. Closing the runtime stops and releases its
+owned tree.
+
+The scalar processor rejects `process()` while inactive. Other plugins define
+their own direct-call behavior. When calls can overlap lifecycle changes, use
+a guarded call so the manager can stop admitting work and wait for current
+calls before deactivation.
+
+## Child slots and scripts
+
+A plugin can declare typed child slots. A cascade controller can have one slot
+for an outer controller and another for an inner controller. The saved component
+chooses which implementations fill those slots.
+
+Each slot has a manager that tracks its loaded entries and lifecycle states.
+A single or optional slot selects at most one active entry; a list slot can
+have several. The parent plugin decides when to activate or deactivate its
+children during ordinary lifecycle callbacks.
+
+A script coordinates slots without being a plugin itself. In the scalar
+pipeline tutorial, the script calls a processor and passes its result to an
+accumulator. The application configures the script's collection and activates
+its children before running that loop.
+
+## Calls across a language boundary
+
+For a C++ plugin used by a Python application, the builder starts a C++
+component-server process and gives the application a generated adapter.
+That process owns the real plugin and its descendants.
+
+Method calls and lifecycle requests travel to the host. A handover value sent
+with activation is encoded using the plugin type's declared state schema.
+The host decodes it and passes it to activation. Closing the owning runtime
+also releases its hosts and transports.
+
+The [connection guide](component_connection.md) explains result lifetimes and
+nested calls. The [runtime guide](runtime-lifecycle.md) gives the lifecycle and
+slot APIs.
+
+## What happens when you change something?
+
+Changing a plugin source file requires refreshing its registered library.
+Changing a native header can also require rebuilding applications that include
+it. A running process can keep its old loaded library until it restarts or
+replaces the instance.
+
+Changing a saved parameter affects instances constructed from that file.
+Replacing a loaded instance is a runtime operation. It uses the already
+registered artifacts and does not compile source.
+
+These distinctions explain why `colcon build`, `rpp library refresh`, and a
+slot reload are separate steps. The [registry guide](registry.md#refresh-rebuild-and-reload)
+shows which files each operation updates.

@@ -1,9 +1,8 @@
 # Testing support and coverage
 
-`rpp_testing` supplies shared source fixtures and packaged test data. Tests
-remain in their implementation repositories; this page identifies the shared
-support and the scope of important runtime scenarios. Test presence is not a
-claim that a particular checkout passed.
+`rpp_testing` supplies the plugins, saved components, and workspaces used by
+other packages' tests. This page explains where to find those fixtures and the
+runtime scenarios that use them.
 
 See the [test image](test-image.md) for the environment and
 [integration CI](integration.md) for coordinated revision checks.
@@ -85,5 +84,4 @@ its CI runs both languages.
 Control and localization retain algorithm/integration tests beside their
 implementations. Localization's
 [bag parity runbook](https://github.com/coe-marble/rpp_localization/blob/develop/test/robot_localization_parity/README.md)
-describes saved accuracy, CPU, allocation, and replay evidence. Distinguish those
-algorithm measurements from runtime/transport benchmarks.
+describes how to record accuracy, CPU, allocations, and replay counts.

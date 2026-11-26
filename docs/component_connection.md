@@ -75,13 +75,14 @@ and starts servers with unconfigured roots; it does not activate plugins.
 
 ## Lifecycle across the boundary
 
-Remote configure/cleanup execute in the hosting process and report their result
-to the caller. Native activation/deactivation and typed handover are supported;
-adapted activation/deactivation and typed handover remain unsupported.
-Applications and hosts must use matching generated protocol versions.
+Configure, activate, deactivate, and cleanup commands run in the hosting process
+and return their result to the caller. Activation can carry the handover state
+declared by the plugin type. The generated adapter encodes that value with its
+schema ID; the host decodes it before calling the plugin.
 
-The ordinary deployment path uses local component-server processes. Treat
-remote-machine placement as planned rather than a documented deployment feature.
+The application prepares handover state before activation, switching, or reload.
+See [typed handover](runtime-lifecycle.md#typed-handover) for the request format.
+Keep generated clients, servers, and their runtimes on matching protocol versions.
 
 ## C++ RPC result lifetime
 

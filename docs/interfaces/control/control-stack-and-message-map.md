@@ -1,10 +1,44 @@
 # Control execution
 
-`rpp_control` implements the shared contracts with a ROS-independent
-`ControlScript` and an optional `ControlScriptNode`.
-Read [shared layouts](../shared-bind-and-runtime.md) for field and horizon
-packing and the [method reference](../interface-methods.md) for plugin calls.
-This page owns script-level composition and execution behavior.
+`ControlScript` turns measured state and desired references into actuator
+commands. `ControlScriptNode` receives ROS measurements and goals, runs the
+script on a worker, and publishes its results.
+
+## A pose goal through a cascade
+
+Consider a planar vehicle at x=0, y=0, yaw=0, with a target at x=2, y=0, yaw=0.
+Its measured state includes pose and body velocity:
+
+```text
+state = [x, y, yaw, vx_body, vy_body, wz_body]
+```
+
+The reference generator stores the target. On each tick it samples the desired
+pose according to its interpolation or path algorithm. This separates where
+the vehicle should be from how the controller tries to get there.
+
+The outer pose controller compares that sampled pose with measured pose and
+produces desired body velocity. For example, if this tick's x reference is 2 m,
+yaw is zero, and x proportional gain is 1 s⁻¹ with no I/D contribution or active
+limit, the 2 m error produces a 2 m/s forward reference.
+
+The inner velocity controller compares that desired velocity with measured
+velocity. Its output is force and yaw moment. `WaterjetAllocator` converts the
+requested wrench into normalized thrust and nozzle commands, using the
+configured jet geometry and limits.
+
+```text
+pose target -> sampled pose -> desired velocity -> force/moment -> thrust/nozzle
+               generator       pose controller    velocity PID   allocator
+```
+
+After limiting the actuator commands, the script maps them back to an estimate
+of realized control. The next controller tick uses that feedback for
+anti-windup: the controller can account for a requested force that the
+actuator could not provide.
+
+The cascade owns these internal connections. The script sees the cascade's
+combined state/reference requirements and final control output.
 
 ## Components and routing
 
@@ -12,6 +46,11 @@ Each plugin declares flat layouts. The script resolves fields and prepares
 state, current-reference, control, actuator, and realized-control routes.
 Control and actuator destinations have exclusive writers. Controllers may
 consume overlapping generated reference fields; the script warns about overlap.
+
+For example, the state provider can expose all six planar state values while
+the pose PID consumes only x/y/yaw and the velocity PID consumes vx/vy/wz.
+Configuration matches field names, quantities, frames, and resources and saves
+the gather indices. Ticks reuse those indices to supply each plugin's values.
 
 Separately loaded top-level controllers do not acquire implicit connections.
 A `CascadeController` owns its child routes, call order, and child lifecycle.
@@ -50,8 +89,10 @@ handover.
 ## State and threading
 
 `rpp_control::BufferedStateProvider` implements
-`rpp_interfaces::StateProvider`. It buffers measurements; it does not estimate
-state or create ROS subscriptions.
+`rpp_interfaces::StateProvider`. The ROS callback writes a complete measured
+sample and acquisition time into it. The worker reads one coherent sample for
+control. If localization supplies that sample, the provider stores the filtered
+state exactly as received; filtering remains in localization.
 
 The ROS executor converts measurements and goals, manages lifecycle changes,
 and publishes snapshots. A dedicated worker performs numeric ticks with
@@ -81,6 +122,11 @@ The ROS adapter grants one identity token per reference interface through
 interface's goals and releases ownership. There is no separate control token.
 Disabling `~/enable` cancels goals and produces configured safe output while
 preserving component lifecycle states and reference ownership.
+
+For example, if client A claims an interface, client B cannot replace its goals
+with a different token. If A stops refreshing its goal, the values expire but A
+still owns the interface. A must release it before another client can claim it.
+The plain `cmd_vel` override described below deliberately bypasses this check.
 
 ## Mission supervision
 
@@ -126,19 +172,38 @@ The `follow_path` action forwards the global path to `ReferenceGenerator.setPath
 The adapter verifies path support at construction and on subsequent submissions.
 `PlanarPathReference` prunes it; an outer
 `RegulatedPurePursuitController2D` can compute velocity references for inner control.
-Mission monitors supply guards and goal completion; Nav2's separate
-`progress_checker_id` and `path_handler_id` are unsupported.
+Mission monitors supply guards and goal completion. Leave Nav2's
+`progress_checker_id` and `path_handler_id` empty; the action rejects requests
+that set them.
 
 ## Running and inspecting
 
-Use the [package runbook](https://github.com/coe-marble/rpp_control/blob/develop/README.md)
-for launch commands, numeric/masked ROS messages, parameter examples, and plugin
-configuration. Read `~/layout` before sending numeric goals or state samples.
-The Vizanti Layout Inspector can display those layouts and current values.
+After building the ROS package, sourcing the workspace, and registering its
+plugins, start the bundled control script with development navigation inputs:
 
-The [launch file](https://github.com/coe-marble/rpp_control/blob/develop/launch/control_script.launch.py)
-defines startup options. Shared ROS messages live in
-[`rpp_ros_interfaces`](https://github.com/coe-marble/rpp_ros_interfaces).
+```bash
+ros2 launch rpp_control control_script.launch.py \
+  expose_navigation_topics:=true is_dev:=true
+```
+
+The default node name is `control_script`. In another sourced terminal, inspect
+its advertised fields and enable execution:
+
+```bash
+ros2 topic echo /control_script/layout --once --qos-durability transient_local
+ros2 service call /control_script/enable std_srvs/srv/SetBool "{data: true}"
+ros2 topic echo /control_script/status
+```
+
+The layout gives the measurement/resource names, field order, goal interfaces,
+and final actuator fields. Supply fresh state samples before expecting control
+output; enabling alone does not supply a measured state or a goal. Namespaces
+change these paths in the usual ROS way.
+
+The [package runbook](https://github.com/coe-marble/rpp_control/blob/develop/README.md)
+contains the numeric/masked goal message examples and controller parameters.
+The Vizanti Layout Inspector displays layouts and their latest values.
+
 Numeric failures select configured safe commands for affected branches;
-an unrecoverable plugin exception stops the worker. Physical stopping and
-hardware watchdogs remain the responsibility of the selected output adapter/driver.
+an unrecoverable plugin exception stops the worker. The output adapter or driver
+applies those commands to simulation or hardware and owns its physical watchdog.

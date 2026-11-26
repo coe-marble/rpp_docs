@@ -106,17 +106,11 @@ examples use gain `2` and offset `1`. Tutorial 06 explains the accumulator's
 state transfer. Tutorial 05 connects both components using script slots and
 produces totals `3`, `8`, and `15` for inputs `1`, `2`, and `3`.
 
-## Later work
+## More examples
 
-Add a tutorial on executable parameter definitions, shared YAML beside
-`params/parameters.py`, and storing evaluated values. See the
-[workspace guide](../workspaces.md#yaml-and-shared-parameter-data)
-for that pattern. C++ implementations of the example contracts and
-cross-language execution can follow.
-
-Integrated demos and benchmarks have separate guides:
-[localization demo plan](../demos.md)
-and [communication benchmarks](../benchmarks/communication.md).
+The [workspace guide](../workspaces.md#yaml-and-shared-parameter-data) shows how
+to load shared YAML data from `params/parameters.py`.
+For larger examples, see [localization and communication](../demos.md).
 
 [glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
 [glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

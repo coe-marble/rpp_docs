@@ -1,72 +1,110 @@
 # Shared robotics interfaces
 
-`rpp_interfaces` owns the Cap'n Proto contracts shared by control, estimation,
-models, mission supervision, state buffers, and hardware. It also supplies
-C++ and Python field-layout helpers. Algorithm implementations belong to their
-libraries; the current generic EKF/UKF implementations live in
-`rpp_localization`.
+`rpp_interfaces` defines the numeric contracts used by controllers, reference
+generators, state buffers, estimators, models, mission monitors, and hardware
+endpoints. A contract declares what a plugin reads and returns. The plugin
+implementation supplies the algorithm.
 
-Start with [component responsibilities](component-boundaries.md), then read
-[layouts and numeric execution](shared-bind-and-runtime.md). Use the
-[method reference](interface-methods.md) for arguments and result semantics.
-The [implementation status](../status.md) separates available source from future work.
+For example, `rpp_interfaces::ControlLaw` is the controller contract.
+`rpp_control::PIDPoseController2D` implements it for planar pose control.
+Its description declares position and yaw as inputs and body velocity as output.
+The application can prepare connections from those declarations before calling
+the controller.
 
-## Guides
+## Descriptions explain the numbers
 
-| Guide | Owns |
-| --- | --- |
-| [Component boundaries](component-boundaries.md) | Responsibilities and data flow between plugin families. |
-| [Shared descriptors and numeric runtime](shared-bind-and-runtime.md) | Field dimensions, frames, routing, buffer packing, horizons, and ownership. |
-| [Interface method reference](interface-methods.md) | Calling rules and results for every shared interface method. |
-| [Control execution](control/control-stack-and-message-map.md) | Script routing, cascade composition, goal ownership, supervision, and ROS integration. |
-| [Control dependencies and extensions](control/ros-independent-control-framework.md) | Core dependencies and the boundary for optional modeling/optimization extensions. |
-| [Generic estimation and localization](estimation/generic-estimation-and-localization.md) | Current estimator implementation, navigation composition, replay, and verification limits. |
+A flat array such as `[1, 2, 0.3]` does not say whether it contains position,
+velocity, or force. Each configured plugin therefore provides `getDesc()`.
+That description gives its fields names, coordinate kinds, quantities, frames,
+sizes, and resources.
 
-## Schema inventory
+A planar measured-state layout built for resource `base` contains:
 
-All paths below are relative to the
-[`rpp_interfaces` library](https://github.com/coe-marble/rpp_interfaces/tree/develop).
+| Field | Values | Frame |
+| --- | --- | --- |
+| `base.position` | x, y | map |
+| `base.orientation` | yaw | map |
+| `base.linearVelocity` | vx, vy | base_link |
+| `base.angularVelocity` | wz | base_link |
 
-| Directory | Contracts |
-| --- | --- |
-| [`plugin_types/common`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/common) | `FieldDesc`, `FieldListDesc`, `LimitDesc`, status/quantity/coordinate constants, realtime annotation. |
-| [`plugin_types/state`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/state) | `StateProvider`: coherent buffered state reads and writes. |
-| [`plugin_types/reference`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/reference) | `ReferenceGenerator`: point, path, and timed-trajectory sampling. |
-| [`plugin_types/mission`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/mission) | `MissionMonitor`: continuation decisions and selected goal completion. |
-| [`plugin_types/control`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/control) | `ControlLaw`, `ActuationMapper`, and `ControlConstraint`. |
-| [`plugin_types/model`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/model) | `Model`: prediction, observation, coordinate operations, and derivatives. |
-| [`plugin_types/estimation`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/estimation) | `Estimator`: owned state, covariance, prediction, and correction. |
-| [`plugin_types/hardware`](https://github.com/coe-marble/rpp_interfaces/tree/develop/plugin_types/hardware) | `Hardware` endpoint descriptions and numeric `HardwareIO`. |
+Its numeric state is `[x, y, yaw, vx, vy, wz]`. A pose controller needs the
+first two fields; a velocity controller needs the last two. Their inputs are
+prepared by field name and meaning, so neither must consume the complete
+state array or assume the producer uses the same field order.
 
-The library's `plugins.json` declares schemas and contains no concrete algorithm
-plugins. For example, `rpp_interfaces::StateProvider` is the contract;
-`rpp_control::BufferedStateProvider` is one implementation.
+A matching name is only part of the connection. Quantities, sizes, frames, and
+resources must agree too. A body-frame velocity cannot be connected to a
+map-frame velocity by changing its label; an adapter must perform that conversion.
 
-## Using the interfaces
+The [layout guide](shared-bind-and-runtime.md) explains those checks and the
+stored/tangent dimensions.
 
-Logical schema imports start at `rpp_interfaces`:
+## The calls inside a control loop
 
-```capnp
-using D = import "rpp_interfaces/common/descriptions.capnp";
-```
+A state provider returns the latest measured sample and its acquisition time.
+A reference generator uses that state and its accepted target to produce the
+desired values for this tick. A controller compares the two and produces control
+values. An actuation mapper converts those values into actuator commands.
 
-Generated C++ plugin interfaces use that namespace, for example
-`rpp_interfaces::ControlLaw`. The header-only CMake target
-`rpp_interfaces::rpp_interfaces` exports field layouts, field routes,
-`SignalRouter`, `ReferenceHorizon`, and `ControlLawLayout`.
+For a planar cascade, the pose controller produces body velocity references.
+The inner velocity controller uses measured velocity to produce force and yaw
+moment. The allocator then produces the actuator commands. Each stage has a
+different input/output layout even though every numeric payload is flat.
+
+A mission monitor checks progress or another mission condition. All active
+monitors can stop continuation through `isOk`. The action selects one
+goal-capable monitor to decide completion through `isGoalReached`.
+A generator reaching the end of its trajectory does not make that decision.
+
+The [control guide](control/control-stack-and-message-map.md) follows a pose
+goal through this chain, including ownership and expiry.
+
+## Models and estimators
+
+A model evaluates supplied state and input: for example, it predicts the next
+state or predicts what a sensor would measure. It does not keep the vehicle's
+estimate.
+
+The estimator keeps that estimate, its covariance, and its processing history.
+It predicts with the model, corrects using measurements, and returns a coherent
+state/covariance sample. Measurement layouts can differ from the estimate layout;
+a position measurement need not contain velocity or every other estimated value.
+
+Generic EKF/UKF implementations live in `rpp_localization`. The
+[estimation guide](estimation/generic-estimation-and-localization.md) explains
+their numerical and ROS execution.
+
+## Preparing and using a plugin
+
+After configuring the plugin, read `getDesc()`, prepare routes and buffers,
+and check the operations the application needs. For example, FollowPath requires
+a generator advertising `setPath`. The generator's `bind()` prepares its
+sampling horizon; other interfaces describe their layouts through configuration.
+
+During execution, calls use the prepared field order. State, reference, control,
+measurement, and matrix values are flat `List(Float64)` buffers. Time values are
+unsigned nanoseconds; status uses the shared UInt8 codes. Contract version is
+**1**, and `codeOk = 0`.
+
+The [method reference](interface-methods.md) explains each argument and result.
+Schemas live under `rpp_interfaces/plugin_types`, grouped into `common`,
+`state`, `reference`, `mission`, `control`, `model`, `estimation`, and
+`hardware`.
+
+## C++ and Python helpers
+
+The CMake target `rpp_interfaces::rpp_interfaces` exports field layouts,
+field routes, `SignalRouter`, `ReferenceHorizon`, and `ControlLawLayout`.
 The Python package provides `FieldLayout`, `field_route`, and parameter helpers.
 
-Register the schemas before compiling consumers. Use `RPP_INTERFACES_CPP_DIR`
-when generated headers are outside the normal registry interface directory.
-See [registration and generated-code compatibility](../registry.md).
+For example, a state provider's `parameters.py` can declare the planar layout:
 
-## Compatibility
+```python
+from rpp_interfaces.parameter_helpers import get_navigation_state
 
-The shared contract version remains **1**, and `codeOk = 0`. Schema IDs,
-method ordinals, generated wrappers, and native binaries must agree.
-A contract version does not establish native C++ ABI compatibility: rebuild
-consumers and refresh affected registered plugins when shared headers change.
+class ComponentParameters:
+    state = get_navigation_state(resource="base", dimensions=2)
+```
 
-The flat layouts and helpers are implemented. They do not establish an
-allocation or timing guarantee for every plugin, transport, or application.
-See [numeric execution requirements](shared-bind-and-runtime.md#native-execution-and-ownership).
+Register shared schemas before compiling their consumers. After changing shared
+headers, rebuild consumers and refresh the affected registered plugins.
