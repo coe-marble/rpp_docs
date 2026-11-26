@@ -56,9 +56,8 @@ example library contains two [plugin types][glossary-plugin-type] and two Python
 ### Inspect the registry
 
 ```bash
-# Inspect a shared contract from Tutorial 01 in the initialized common library.
-rpp registry list --type --library rpp_common
-rpp registry info rpp_common::Estimator2D
+# Inspect the initialized library of shared schemas from Tutorial 01.
+rpp library info rpp_common
 
 # List registered libraries and the example library's metadata.
 rpp library list

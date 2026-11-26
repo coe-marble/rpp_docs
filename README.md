@@ -56,6 +56,7 @@ separation allows one implementation to be reused across multiple workspaces.
 | Setup | [Installation](docs/getting-started.md), [development image](docs/development-image.md) |
 | Learning path | [Tutorials](docs/tutorials/README.md), [integrated demo plan](docs/demos.md) |
 | Concepts | [Architecture](docs/architecture.md), [plugin contracts](docs/plugins-and-plugin-types.md) |
+| Shared interfaces | [Schemas and field routing](docs/interfaces/README.md), [interface method reference](docs/interfaces/interface-methods.md) |
 | Terminology | [RPP glossary](docs/glossary.md) |
 | Composition | [Core workflows](docs/workflows.md), [components, workspace layout, and parameters](docs/workspaces.md) |
 | Execution | [Managed runtimes and lifecycle](docs/runtime-lifecycle.md), [component connections](docs/component_connection.md) |

@@ -260,11 +260,15 @@ auto concurrent_runtime = concurrent_builder.build_component_from_path(component
 [Component][glossary-component] and script roots use distinct runtime aliases:
 
 ```cpp
-rpp::ComponentRuntime<>              // single-threaded component root
-rpp::ComponentRuntime<true>          // concurrent component root
-rpp::ScriptRuntime<>                 // single-threaded script slot collection
-rpp::ScriptRuntime<true>             // concurrent script slot collection
+rpp::ComponentRuntime                // single-threaded component root
+rpp::ConcurrentComponentRuntime      // concurrent component root
+rpp::ScriptRuntime                   // single-threaded script slot collection
+rpp::ConcurrentScriptRuntime         // concurrent script slot collection
 ```
+
+`BasicComponentRuntime<Concurrent>` and `BasicScriptRuntime<Concurrent>` are the
+aliases for code that selects its threading mode through a template parameter.
+Both default to `false`.
 
 They share `BasicRuntime<Concurrent, IsScript>` internally. `IsScript` selects
 the storage model at compile time: component roots retain their owning fixed-slot

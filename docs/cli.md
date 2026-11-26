@@ -47,9 +47,9 @@ for prerequisites and recovery.
 ## Registry inspection and settings
 
 ```text
-rpp registry describe SOURCE
-rpp registry list [--type] [--library LIBRARY] [--json]
-rpp registry info LIBRARY::PLUGIN_TYPE
+rpp registry describe SOURCE [--language {cpp,python}] [--plugin-id ID]
+rpp registry list [--type] [--library LIBRARY] [--json] [--registry FILE]
+rpp registry info NAME_OR_ID [--registry FILE]
 rpp registry config [list]
 rpp registry config get SETTING_NAME
 rpp registry config set SETTING_NAME VALUE
@@ -57,9 +57,17 @@ rpp registry config set SETTING_NAME VALUE
 
 `describe` prints parsed metadata and validation results for Python/C++ [plugins][glossary-plugin]
 or Cap'n Proto [plugin types][glossary-plugin-type]. `list` shows plugin implementations by default;
-`--type` selects plugin types. `info` reads a registered plugin-type record, using
-its qualified name rather than an internal ID. Use the library commands below
-to inspect a plugin implementation.
+`--type` selects plugin types. `info` reads plugin or plugin-type metadata using
+a qualified name, a unique short name, or an internal ID. Ambiguous names are
+rejected; use `rpp library LIBRARY info NAME` for an implementation or add
+`--type` for its plugin type. `list` and `info` read `--registry FILE` when supplied.
+The file can contain `Plugins`/`PluginTypes` mappings, a flat metadata mapping,
+or a single plugin/type record, in JSON or JSON5 format.
+
+`describe --language` chooses the implementation parser explicitly. Cap'n Proto
+types keep their schema parser and reject an implementation-language override.
+`--plugin-id` (also `--id`) overrides the metadata `Id`, which is included in the
+description output. Source files and registry contents are not rewritten.
 
 Setting names are uppercase. The supported settings are `USE_ROS2_COMPILATION`,
 `RPP_CPP_CORE_PATH`, and `BUILD_TYPE` (default `RelWithDebInfo`):
@@ -250,6 +258,51 @@ Only Bash completion is supported. Enable it in the current Bash shell with:
 ```bash
 eval "$(rpp completion --shell bash)"
 ```
+
+Put that activation line in your Bash startup file to enable it persistently.
+The executable must be available on `PATH` when the startup line runs.
+
+Tab completion covers the complete command tree, including the library and test
+subcommands. Commands, flags and finite choices come from the same parser
+definitions used for execution. Dynamic names are read from the selected registry
+and workspace. Global `--rpp-home` takes precedence over `RPP_HOME`.
+
+Where commands and names share an argument, Tab with an empty prefix offers
+only commands. After a prefix is typed, matching commands appear first, followed
+by matching names; each group is sorted alphabetically. For example, `rpp library `
+offers commands, while `rpp library r` also offers registered libraries starting
+with `r`. Arguments that require a library, such as `rpp library refresh `, offer
+library names immediately.
+
+| Argument | Completion |
+|---|---|
+| Library | Registered libraries; `library LIBRARY` also completes its actions |
+| Plugin/type | Qualified names globally, library-local names within a library; `--type` selects types |
+| Build profile | Debug, Release, ReleaseWithSymbols, OptimizedRelease, and the accepted RelWithDebInfo alias |
+| Source | Navigable directories and supported file extensions for the current operation |
+| Workspace | Registered workspaces and directory paths |
+| Script | Workspace script references, or loadable `library::script` references for `script load` |
+| Configuration | Configurations of the selected script; import reads the selected linked source |
+| Component | Unique names, with IDs offered for ambiguous names or an explicitly typed ID prefix |
+| Assignment | Declared slots and compatible source components; unassignment offers assigned components |
+| Subcomponent removal | Populated parent slots and the children assigned there |
+| Parameter get | Persisted keys discovered by static parsing, including linked component sources |
+| Parameter set | Persisted and declared keys; known booleans and declared choices for values |
+| New name, jobs, arbitrary value | Free-form; no unrelated filename suggestions |
+
+Flags already present anywhere on the command line select the completion
+context, including `--type`, `--configuration`, `--slot` and `--registry` after
+the cursor. Paths retain their appropriate base: `script create --path` is
+relative to the selected workspace, while source file arguments use the shell's
+working directory. Quoted/escaped spaces, `::` names and `--option=value` are
+supported. Directory completion keeps the cursor inside the path.
+
+The shell adapter passes candidates as NUL-delimited data. Completion performs
+read-only metadata lookup, without constructing registry/workspace managers,
+executing parameter files or scripts, or importing native plugins, Qt or ROS.
+Missing or malformed metadata yields no dynamic matches. Command and flag
+completion remains available without an initialized registry. Bash's normal
+common-prefix and match-list behavior is retained.
 
 [glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
 [glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."

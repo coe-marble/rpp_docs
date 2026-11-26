@@ -21,15 +21,14 @@ from a schema to an implementation without loading or executing a [component][gl
 
 ### Part 1: Read plugin types
 
-Open [`rpp_common/estimator.capnp`](https://github.com/coe-marble/rpp_common/blob/develop/rpp_common/common_plugin_types/rpp_common/estimator.capnp).
-The generic `Estimator(State)` declares `step(state, dt)` and `validate(state)`.
-`Estimator2D` specializes that contract with `Msgs.Pose2D` and marks the resulting
-interface with `$Anot.plugin("Estimator2D")`.
+Open [`rpp_common/msgs.capnp`](https://github.com/coe-marble/rpp_common/blob/develop/rpp_common/common_plugin_types/rpp_common/msgs.capnp).
+It defines shared data such as `Point3D`, `Pose3D`, and `Wrench3D`. These structs
+can be used as method inputs and results without defining a plugin type.
 
-Compare it with [`rpp_common/dynamical_system.capnp`](https://github.com/coe-marble/rpp_common/blob/develop/rpp_common/common_plugin_types/rpp_common/dynamical_system.capnp).
-The contract describes the accepted inputs and returned values independently of
-the algorithm used to calculate them. The shared `rpp_common` repository provides
-these contracts; concrete algorithms belong to their implementation [libraries][glossary-library].
+The accompanying [`rpp_common/anot.capnp`](https://github.com/coe-marble/rpp_common/blob/develop/rpp_common/common_plugin_types/rpp_common/anot.capnp)
+defines the `plugin` annotation. A schema uses `$Anot.plugin(...)` to mark an
+interface for registration. Each plugin [library][glossary-library] defines its
+own contracts independently of the algorithms that implement them.
 
 Now open the example library's
 [`scalar_processor.capnp`](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/example_library/plugin_types/scalar_processor.capnp):
