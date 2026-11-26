@@ -1,6 +1,6 @@
 # RPP benchmarks
 
-Runnable benchmark sources live in `rpp_dev/src/rpp_demos/benchmarks`.
+Communication benchmark sources live in `rpp_dev/src/rpp_demos/benchmarks`.
 The [development image](../development-image.md) supplies the RPP environment;
 benchmark-specific preparation and Release builds are still required.
 
@@ -26,7 +26,12 @@ warmup, sample count, and whether process startup is included. Report latency
 distributions and throughput with machine-readable raw results. Keep output
 logging outside timed loops and verify results before timing the workload.
 
-Localization accuracy and algorithm timing can be added later using identical
-inputs and configuration. Report them separately from RPP runtime overhead.
+Localization accuracy and estimator timing already have a separate
+[bag parity runbook](https://github.com/coe-marble/rpp_localization/blob/develop/test/robot_localization_parity/README.md).
+It compares generic RPP, legacy RPP, and robot_localization with saved tracks,
+CPU, allocation, and replay statistics. See
+[estimation measurement rules](../interfaces/estimation/generic-estimation-and-localization.md#legacy-compatibility-and-measurement)
+before interpreting worker CPU or comparing replay counts. Report algorithm
+cost separately from RPP call/transport overhead.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."

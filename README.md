@@ -1,84 +1,69 @@
-
-# Robotics Plugin Platform (RPP) Documentation
+# Robotics Plugin Platform (RPP)
 
 > Unofficially, RPP stands for **Robotics Plus Plus**. Following the proud
 > industry tradition of adding a plus sign and calling it the next generation.
 
-RPP is a language-independent framework for defining, registering, composing,
-and executing robotics [plugins][glossary-plugin]. It separates plugin contracts from concrete
-implementations, so the same system can support multiple languages, custom
-[plugin types][glossary-plugin-type], and reusable [components][glossary-component].
-
-## Motivation
-
-RPP is inspired by nav2 and similar [plugin][glossary-plugin] architectures, but addresses two
-limitations that become important as a system grows. First, adding a new
-[plugin type][glossary-plugin-type] should be straightforward: developers can define a new type and
-make it available to the rest of the system without changing a fixed central
-list of built-in types. Second, a plugin system should not force every plugin
-to use the same implementation language. RPP solves this by defining plugin types in a language-neutral schema, generating language-specific interfaces, and providing adapters for supported runtimes. In this way, a plugin type can be implemented in one language and used in another without requiring the plugin author to write language-specific code for each runtime.
-
-## Supported languages
-
-RPP currently supports:
-
-- **Python**, through the `rpp_py` runtime.
-- **C++**, through the `rpp_cpp` runtime.
+RPP defines language-neutral plugin contracts and composes their Python/C++
+implementations into managed runtimes. A plugin type is a contract, a plugin
+implements it, and a component saves a plugin's parameters and child assignments.
+Start with the [glossary](docs/glossary.md) for these distinctions.
 
 ## Start here
 
-Use the [development image](docs/development-image.md), the recommended tutorial
-environment, then follow the [six tutorials](docs/tutorials/README.md).
-For host installation, use [Installation and first run](docs/getting-started.md).
+1. Choose the [development image](docs/development-image.md) or
+   [host installation](docs/getting-started.md).
+2. Follow the [six tutorials](docs/tutorials/README.md): contracts, registration,
+   configuration, loading, scripts, and lifecycle.
+3. Read [architecture](docs/architecture.md) and [core workflows](docs/workflows.md)
+   when composing your own application.
 
-Existing installations should follow [registry migration](docs/registry.md#upgrade-an-existing-registry)
-after updating packages and matching native artifacts.
+For an existing installation, use
+[registration and upgrades](docs/registry.md#upgrade-an-existing-registry).
+The [implementation status](docs/status.md) distinguishes current source,
+unsupported paths, and future extensions.
 
-## How RPP fits together
+## Working with RPP
 
-RPP is organized around three stages:
+| Task | Guide |
+| --- | --- |
+| Define or implement a plugin contract | [Plugins and plugin types](docs/plugins-and-plugin-types.md) |
+| Register, rebuild, or migrate libraries | [Registry](docs/registry.md) |
+| Save components, parameters, and script configurations | [Workspaces](docs/workspaces.md) |
+| Configure, activate, switch, or close components | [Runtime lifecycle](docs/runtime-lifecycle.md) |
+| Use native or adapted calls | [Component connections](docs/component_connection.md) |
+| Use C++ runtime APIs and threading policies | [C++ runtime](docs/cpp-runtime.md) |
+| Expose slot operations through ROS 2 | [ROS 2 integration](docs/ros2-integration.md) |
+| Find a command or flag | [CLI reference](docs/cli.md) |
 
-1. **Define** a language-neutral [plugin type][glossary-plugin-type] and its interface.
-2. **Register** concrete implementations and their metadata in the RPP home
-    directory, normally `~/.rpp`.
-3. **Compose and execute** saved [components][glossary-component] through managed runtime handles and
-    slots, with explicit configuration, activation, and shutdown. Workspaces are
-    identified by their `.rppws` directory.
-
-The registry owns metadata and generated interfaces. Libraries own [plugin][glossary-plugin]
-source. Workspaces own composition, configuration, and component state. This
-separation allows one implementation to be reused across multiple workspaces.
-
-## Documentation map
+## Robotics interfaces and execution
 
 | Topic | Guide |
 | --- | --- |
-| Setup | [Installation](docs/getting-started.md), [development image](docs/development-image.md) |
-| Learning path | [Tutorials](docs/tutorials/README.md), [integrated demo plan](docs/demos.md) |
-| Concepts | [Architecture](docs/architecture.md), [plugin contracts](docs/plugins-and-plugin-types.md) |
-| Shared interfaces | [Schemas and field routing](docs/interfaces/README.md), [interface method reference](docs/interfaces/interface-methods.md) |
-| Terminology | [RPP glossary](docs/glossary.md) |
-| Composition | [Core workflows](docs/workflows.md), [components, workspace layout, and parameters](docs/workspaces.md) |
-| Execution | [Managed runtimes and lifecycle](docs/runtime-lifecycle.md), [component connections](docs/component_connection.md) |
-| C++ details | [Runtime guide](docs/cpp-runtime.md), [construction and ownership](docs/cpp-context-flow.md) |
-| ROS 2 | [Slot services and status topics](docs/ros2-integration.md) |
-| Registry and commands | [Registration and upgrades](docs/registry.md), [CLI reference](docs/cli.md) |
-| Measurements | [Benchmarks](docs/benchmarks/README.md), [communication benchmark](docs/benchmarks/communication.md) |
-| Development | [Repository catalog](docs/repositories.md), [integration and CI](docs/integration.md), [testing support](docs/testing.md), [test image](docs/test-image.md) |
-| Documentation | [Contributing](docs/contributing.md), [historical lifecycle design](docs/plans/managed-plugin-lifecycle/feature-description.md) |
+| Contracts and available schema families | [Shared interfaces](docs/interfaces/README.md) |
+| Component responsibilities | [Component boundaries](docs/interfaces/component-boundaries.md) |
+| Field routing, dimensions, frames, and flat buffers | [Shared layouts](docs/interfaces/shared-bind-and-runtime.md) |
+| Method arguments and results | [Method reference](docs/interfaces/interface-methods.md) |
+| Control routing, cascades, goals, and mission supervision | [Control execution](docs/interfaces/control/control-stack-and-message-map.md) |
+| Generic filters, navigation, and replay | [Estimation and localization](docs/interfaces/estimation/generic-estimation-and-localization.md) |
+
+## Developing and measuring
+
+- [Repository catalog](docs/repositories.md) and [integration CI](docs/integration.md).
+- [C++ construction and ownership internals](docs/cpp-context-flow.md).
+- [Testing support](docs/testing.md) and [test image](docs/test-image.md).
+- [Benchmarks](docs/benchmarks/README.md) and [integrated demo status](docs/demos.md).
+- [Contributing documentation](docs/contributing.md).
+- [Historical lifecycle plans](docs/plans/README.md).
 
 ## Documentation ownership
 
-All RPP user and developer guides live in `rpp_docs`. Individual repositories
-keep brief README descriptions and links here; executable examples, schemas,
-fixtures, and source API comments stay beside their implementation. The
-integration repository `rpp_dev` pins the coordinated source and docs revisions.
+This repository owns the shared user/developer guides. Implementation repositories
+own schemas, runnable examples, tests, and source API comments; guides link to
+those sources. Package runbooks may contain detailed launch/configuration examples.
 
-The nine implementation submodules are declared in
-[`docs/repositories.yml`](docs/repositories.yml). The dependency-free inventory
-checker is documented in [Contributing](docs/contributing.md); it checks catalog
-paths without modifying implementation repositories.
+Each topic has one primary guide. Overviews link to it rather than maintaining
+another copy of its API or installation steps. Current guides describe the
+integration checkout; plans and measured historical results state their scope.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+The source inventory lives in [repositories.yml](docs/repositories.yml).
+`rpp_dev` pins the coordinated source and documentation revisions.

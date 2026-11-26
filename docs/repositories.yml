@@ -7,6 +7,10 @@ repositories:
     path: src/rpp_common
     role: Shared plugin contracts, data models, and generated/common types.
     entry_points: []
+  - id: rpp_interfaces
+    path: src/rpp_interfaces
+    role: Shared robotics schemas and C++/Python field layout, routing, and horizon helpers.
+    entry_points: []
   - id: rpp_orchestrator
     path: src/rpp_orchestrator
     role: Workspace, component composition, scripts, and GUI orchestration.
@@ -34,4 +38,8 @@ repositories:
   - id: rpp_ros2
     path: src/rpp_ros2
     role: ROS 2 per-slot lifecycle services and status topics for managed runtimes.
+    entry_points: []
+  - id: rpp_navigation
+    path: src/rpp_navigation
+    role: Navigation package scaffold; no navigation implementations yet.
     entry_points: []

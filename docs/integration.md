@@ -49,10 +49,8 @@ python3 -m unittest discover -s .github/scripts -p 'test_*.py'
 
 ## Design history
 
-The [managed lifecycle design](plans/managed-plugin-lifecycle/feature-description.md),
-[development plan](plans/managed-plugin-lifecycle/development-plan.md), and
-[checkpoint evidence](plans/managed-plugin-lifecycle/checkpoint-validation.md)
-are historical records. Their old APIs and test results do not describe every
-current revision; the current guides take precedence.
+The [design-history index](plans/README.md) links lifecycle proposals and
+checkpoint evidence. Their old APIs and test results do not describe every
+current revision; the [current status](status.md) and guides take precedence.
 
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

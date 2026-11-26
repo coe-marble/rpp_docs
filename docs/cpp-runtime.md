@@ -1,84 +1,14 @@
 # C++ runtime
 
-`rpp_cpp` provides the C++ [plugin][glossary-plugin] runtime and the C++ [component][glossary-component] server.
+`rpp_cpp` provides the C++ plugin runtime and component server. This guide owns
+application-facing API usage, instance identity, threading policies, and
+subcomponent control.
 
-Generated C++ RPC results retain their original response through shared
-ownership. Struct, list, and data views share that owner, including nested
-views and `Const::shallow_copy()`. Retaining a response moves its handle and
-does not clone its payload. Scalar return values remain ordinary values.
-
-Release every returned RPC view before closing its runtime, client context,
-or executor. Executor-managed views may be released by the application thread:
-their final release queues response destruction on the
-existing RPC executor. The executor and its shutdown behavior are otherwise
-unchanged. Direct clients without an executor must release their views on the
-same RPC thread, before closing that thread's client context/event loop.
-Converting a view to a raw Cap'n Proto reader does not transfer its owner;
-keep the RPP view alive while using that raw reader.
-
-Regenerate affected schema wrappers and adapters, including dependent libraries,
-and rebuild downstream C++ code after this change. Existing generated headers
-and compiled adapters retain their previous ownership behavior.
-
-See [C++ context construction and lifecycle](cpp-context-flow.md) for the
-class responsibilities, call flow, ownership, and runtime operations.
-
-Start a behavior review with
-[the component runtime scenarios](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/test_component_runtime_scenarios.cpp).
-The same scenarios run for `SingleThreaded` and `Concurrent`: activation,
-deactivation/reactivation, switching with and without state handover, source and
-target failure recovery, static slots, multiple-active slots, and shutdown order.
-Concurrent-only scenarios cover closing admission while draining guarded calls
-and retrying after a drain timeout. Lifecycle operations stay on one owner thread.
-These are in-process integration tests of runtime, managers, and lifecycle plugins;
-their small construction bridge uses production slot creation and registration.
-They do not cover description loading, shared-library loading, or external hosts.
-
-Shared test support lives in
-[`fake_plugins.hpp`](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/support/fake_plugins.hpp) (plugin behavior, failure
-controls, and event recording) and
-[`runtime_test_helpers.hpp`](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/support/runtime_test_helpers.hpp) (the single
-private-construction bridge and reusable fixtures). `simple_controllers()` keeps
-the two-controller case; `nested_controllers()` builds two switchable branches:
-
-```text
-script.controllers (exclusive)
-├── a
-│   ├── a.left
-│   │   └── a.left.leaf
-│   └── a.right
-└── b
-    ├── b.left
-    │   └── b.left.leaf
-    └── b.right
-```
-
-Composite plugins explicitly activate/deactivate their subcomponents. Nested scenarios
-check callback order, branch switching, independent descendant state, rollback
-after partial activation, and cleanup after failure under both threading policies.
-`FakeComponentTree` can describe additional shapes without adding local fake classes.
-
-The RPC control layer is separate: `RpcControlService` and `RpcControlClient` in
-`rpc_control_service.hpp` expose remote configuration/cleanup and adapter discovery.
-[Its tests](https://github.com/coe-marble/rpp_cpp/blob/develop/tests/test_rpc_control_service.cpp) use the `RpcControlService` suite.
-The shared generated `plugin_runtime.capnp` protocol still uses the wire interface
-name `PluginRuntime`, which is also consumed by Python.
-
-It can be configured as a regular CMake project with Cap'n Proto **1.1.0**,
-`nlohmann_json`, pybind11, Python development headers, and either `rclcpp` or
-`spdlog`. The generated Cap'n Proto interfaces are version-locked, so a newer
-or older Cap'n Proto release is deliberately rejected by CMake.
-
-From the `rpp_dev` checkout:
-
-```bash
-cmake -S src/rpp_cpp -B build/rpp_cpp -DBUILD_TESTING=OFF
-cmake --build build/rpp_cpp
-```
-
-When `ament_cmake` is available, the package also supports the normal ROS 2
-and `colcon` workflow. ROS 2 logging is selected only when CMake finds
-`rclcpp`; otherwise the runtime uses `spdlog`.
+- [Installation](getting-started.md#build-the-c-runtime) owns build prerequisites and commands.
+- [Runtime lifecycle](runtime-lifecycle.md) defines shared transition semantics.
+- [Component connections](component_connection.md#c-rpc-result-lifetime) defines RPC ownership and result lifetimes.
+- [Construction and ownership](cpp-context-flow.md) explains internal assembly and shutdown.
+- [Testing support](testing.md#native-runtime-scenarios) maps behavior to test sources.
 
 ## Runtime, plugin context, and managed slots
 
@@ -229,8 +159,8 @@ unsupported; remote configure/cleanup is already implemented.
 
 ## Component instance identity
 
-Each [component][glossary-component] has an opaque UUID `instance_id`, available through
-`runtime.get_context().get_instance_id()` or its [plugin][glossary-plugin] context, and in
+Each component has an opaque UUID `instance_id`, available through
+`runtime.get_context().get_instance_id()` or its plugin context, and in
 `runtime.get_subcomponent_statuses(slot)` metadata. This is
 the identity of the loaded instance, separate from the configured component path
 and the slot-local registration name. Configure, activate, deactivate, cleanup,
@@ -257,7 +187,7 @@ rpp::ConcurrentComponentRuntimeBuilder concurrent_builder(data_manager);
 auto concurrent_runtime = concurrent_builder.build_component_from_path(component_path);
 ```
 
-[Component][glossary-component] and script roots use distinct runtime aliases:
+Component and script roots use distinct runtime aliases:
 
 ```cpp
 rpp::ComponentRuntime                // single-threaded component root
@@ -290,7 +220,7 @@ competing lifecycle threads; there is no thread-ID tracking or owner-thread dete
 Each concurrent slot has one mutex and condition variable. The gate protects registry
 snapshots, guarded-call admission, and per-entry call counts. Deactivation closes
 admission and waits for those counts to reach zero. Waiting releases the mutex;
-[plugin][glossary-plugin] callbacks and component construction also execute with the gate unlocked. There are no
+plugin callbacks and component construction also execute with the gate unlocked. There are no
 runtime lifecycle locks, manager mutation locks, or per-entry mutexes.
 
 Direct plugin pointers remain callable while inactive. The plugin owns its state,
@@ -322,7 +252,7 @@ are synchronous and return the actual outcome. The manager validates transitions
 `is_active()` is only an observation. In concurrent mode, subcomponent
 deactivation closes admission and waits for existing guarded calls to finish.
 
-The [plugin][glossary-plugin]'s own `ComponentContext` exposes services and `is_active()`, but has no
+The plugin's own `ComponentContext` exposes services and `is_active()`, but has no
 synchronous self-activation/deactivation methods. Instead a plugin can record its
 intent to deactivate without stopping itself while its callback is executing:
 
@@ -331,7 +261,7 @@ intent to deactivate without stopping itself while its callback is executing:
 context_->request_deactivation().require_success();
 ```
 
-This sets one pending flag in manager-owned [component][glossary-component] data. Success means recorded, not deactivated.
+This sets one pending flag in manager-owned component data. Success means recorded, not deactivated.
 The application processes the tree at a safe point on its lifecycle thread:
 
 ```cpp
@@ -358,6 +288,6 @@ Retained subcomponent views keep only the self view alive and reject access afte
 release; reloading creates a new view. Old runtime references cannot transition a
 replacement registered under the same name.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin-type]: glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

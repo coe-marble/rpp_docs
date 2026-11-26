@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-Follow the [shared prerequisites](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/README.md#prerequisites-and-execution) and complete
-[Tutorial 02: CLI registration](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/02_registration.md).
+Follow the [shared prerequisites](README.md#prerequisites-and-execution) and complete
+[Tutorial 02: CLI registration](02_registration.md).
 Keep using the same tutorial home:
 
 ```bash
@@ -18,7 +18,7 @@ RPP APIs directly in a standalone Python script.
 
 Load saved [components][glossary-component], configure and activate their [runtimes][glossary-runtime], and call them
 through the generated contract. The script shows the whole construction path:
-`LibraryManager` resolves registered [plugins][glossary-plugin], `Workspace` stores component
+`LibraryManager` resolves registered plugins, `Workspace` stores component
 settings, `DataManager` reads them, and `ComponentRuntimeBuilder` constructs a
 runtime from `ComponentRequest(record.folder)`.
 
@@ -38,7 +38,7 @@ python3 tutorials/04_loading/run.py
 
 The script creates or reuses `processor` and `identity` in
 `$RPP_HOME/tutorials/04_loading/workspace`, and saves their [parameters][glossary-parameter] explicitly.
-For each [component][glossary-component] it performs these API calls:
+For each component it performs these API calls:
 
 ```python
 runtime = builder.build_component(ComponentRequest(record.folder))
@@ -62,13 +62,13 @@ Expected failure (unknown component): Component not found: missing
 Expected failure (missing component folder): Component description not found in: .../missing
 ```
 
-`processor` saves gain `2` and offset `1`; `identity` uses the [plugin][glossary-plugin] defaults.
+`processor` saves gain `2` and offset `1`; `identity` uses the plugin defaults.
 The last two examples catch an unknown component name and a missing component
 folder with ordinary Python `try`/`except`. Both are intentional and labeled
 `Expected failure`; the tutorial should finish without a traceback. A missing
 component description raises `FileNotFoundError` from the loading API.
 The saved [workspace][glossary-workspace] remains available
-after the [runtimes][glossary-runtime] close.
+after the runtimes close.
 
 ### Inspect the result
 
@@ -88,12 +88,12 @@ rpp ws component parameter get "$workspace" processor
 rpp registry info example_library::ScalarProcessor
 ```
 
-These commands inspect persistent descriptions. [Runtime][glossary-runtime] construction and
+These commands inspect persistent descriptions. Runtime construction and
 activation happen explicitly in the Python script.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
-[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
-[glossary-workspace]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
-[glossary-runtime]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
-[glossary-parameter]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-library]: ../glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-workspace]: ../glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
+[glossary-runtime]: ../glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
+[glossary-parameter]: ../glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."

@@ -31,10 +31,10 @@ rpp_demos/tutorials/
 
 ## Prerequisites and execution
 
-Use the [`rpp_dev` development image](https://github.com/coe-marble/rpp_docs/blob/develop/docs/development-image.md)
-or follow the [host installation guide](https://github.com/coe-marble/rpp_docs/blob/develop/docs/getting-started.md).
+Use the [`rpp_dev` development image](../development-image.md)
+or follow the [host installation guide](../getting-started.md).
 You need Python 3.10 or newer, the installed RPP packages, and the native
-registration dependencies. The examples use native Python [components][glossary-component]; ROS is
+registration dependencies. The examples use native Python components; ROS is
 not required for their application logic.
 
 For the development image, open a tutorial shell:
@@ -55,8 +55,8 @@ rpp init-home
 
 Registration can compile supporting artifacts even for Python implementations.
 On a host installation, set `RPP_CPP_CORE_PATH` to the directory containing
-`librpp_cpp` and `librpp_cpp_core` before registering types and [plugins][glossary-plugin]. The
-container command above supplies the isolated colcon [library][glossary-library] directory.
+`librpp_cpp` and `librpp_cpp_core` before registering types and plugins. The
+container command above supplies the isolated colcon library directory.
 
 Read Tutorial 01, then follow Tutorial 02's CLI steps to copy the example library
 to `$RPP_HOME/tutorials/example_library` and register it with `--link`. Tutorial
@@ -79,19 +79,19 @@ library for you or import a tutorial framework.
 
 The configuration, loading, and [lifecycle][glossary-lifecycle] examples save their [workspaces][glossary-workspace] under
 `$RPP_HOME/tutorials/<tutorial>/workspace`. The script example makes the copied
-library itself a workspace and saves its script assignments there. [Runtime][glossary-runtime]
+library itself a workspace and saves its script assignments there. Runtime
 handles close on exit, including on exceptions. Registered metadata, generated
 interfaces, copied sources, and component configurations persist for inspection.
 
 After updating example sources, copy them again using Tutorial 02's instructions
 and run `rpp library refresh example_library`. A linked registration reads the
 copied source directory; changes elsewhere in the checkout take effect after
-you update that copy. The runners reset their example component [parameters][glossary-parameter] when
+you update that copy. The runners reset their example component parameters when
 preparing a run.
 
 Each walkthrough provides commented inspection commands. Explore further with
 `rpp registry --help`, `rpp library --help`, and `rpp ws component --help`.
-The [workspace guide](https://github.com/coe-marble/rpp_docs/blob/develop/docs/workspaces.md)
+The [workspace guide](../workspaces.md)
 explains saved components, assignments, and parameter files in more detail.
 
 ## Example library
@@ -103,27 +103,27 @@ explains saved components, assignments, and parameter files in more detail.
 
 The defaults for the affine processor are gain `1` and offset `0`. The configured
 examples use gain `2` and offset `1`. Tutorial 06 explains the accumulator's
-state transfer. Tutorial 05 connects both [components][glossary-component] using script [slots][glossary-slot] and
+state transfer. Tutorial 05 connects both components using script slots and
 produces totals `3`, `8`, and `15` for inputs `1`, `2`, and `3`.
 
 ## Later work
 
-Add a tutorial on executable [parameter][glossary-parameter] definitions, shared YAML beside
+Add a tutorial on executable parameter definitions, shared YAML beside
 `params/parameters.py`, and storing evaluated values. See the
-[workspace guide](https://github.com/coe-marble/rpp_docs/blob/develop/docs/workspaces.md#yaml-and-shared-parameter-data)
+[workspace guide](../workspaces.md#yaml-and-shared-parameter-data)
 for that pattern. C++ implementations of the example contracts and
 cross-language execution can follow.
 
 Integrated demos and benchmarks have separate guides:
-[localization demo plan](https://github.com/coe-marble/rpp_docs/blob/develop/docs/demos.md)
-and [communication benchmarks](https://github.com/coe-marble/rpp_docs/blob/develop/docs/benchmarks/communication.md).
+[localization demo plan](../demos.md)
+and [communication benchmarks](../benchmarks/communication.md).
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
-[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
-[glossary-registry]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#registry "Registry: metadata describing registered libraries, Plugin Types, and Plugins."
-[glossary-workspace]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
-[glossary-runtime]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
-[glossary-slot]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#slot "Slot: a named, typed location for components in a script or composite plugin."
-[glossary-parameter]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."
-[glossary-lifecycle]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#lifecycle "Lifecycle: managed states and transitions for component configuration, activation, and shutdown."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-library]: ../glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-registry]: ../glossary.md#registry "Registry: metadata describing registered libraries, Plugin Types, and Plugins."
+[glossary-workspace]: ../glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
+[glossary-runtime]: ../glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
+[glossary-slot]: ../glossary.md#slot "Slot: a named, typed location for components in a script or composite plugin."
+[glossary-parameter]: ../glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."
+[glossary-lifecycle]: ../glossary.md#lifecycle "Lifecycle: managed states and transitions for component configuration, activation, and shutdown."

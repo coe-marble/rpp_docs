@@ -16,7 +16,7 @@ use a fresh process when changing homes.
 | `config.json` | Registry settings |
 | `.initialized` | Initialization marker |
 | `libraries/` | Managed copies or links to registered source libraries |
-| `registry/rpp_plugin_types.json` | [Plugin-type][glossary-plugin-type] index |
+| `registry/rpp_plugin_types.json` | Plugin-type index |
 | `registry/libraries/<library>/manifest.json` | Library registration metadata |
 | `registry/libraries/<library>/rpp_plugins/` | Implementation descriptions |
 | `registry/libraries/<library>/rpp_plugin_types/` | Type descriptions |
@@ -55,33 +55,70 @@ rpp registry config get BUILD_TYPE
 rpp library refresh my_library
 ```
 
-The default is `RelWithDebInfo`. Supported modes are `Debug`, `Release`, and
-`RelWithDebInfo`. This setting governs registration builds independently of
-CMake's build type for the runtime or application. Existing artifacts need
-refreshing to use a new profile.
+The default is `RelWithDebInfo`. Registration supports these profiles:
+
+| Profile | GCC/Clang flags |
+| --- | --- |
+| `Debug` | `-O0 -g` |
+| `Release` | `-O2 -DNDEBUG` |
+| `ReleaseWithSymbols` / `RelWithDebInfo` | `-O2 -g -DNDEBUG` |
+| `OptimizedRelease` | `-O3 -DNDEBUG` |
+
+`ReleaseWithSymbols` is the display name/alias for persisted `RelWithDebInfo`.
+This setting governs registration builds independently of CMake's build type
+for the runtime or application. Existing artifacts need refreshing to use a new
+profile. MSVC uses its corresponding profile flags and has no `/O3` option.
 
 Debug and RelWithDebInfo validation binaries retain symbols for GDB metadata
 extraction and can be reused for registration. Release uses a separate debug
 validation build, then compiles the installed optimized binary. The GDB helper
-remains an unoptimized debug build. [Plugin types][glossary-plugin-type] use the requested profile.
+remains an unoptimized debug build. Plugin types use the requested profile.
 
 API calls can select a profile without changing the global setting:
 
+```bash
+rpp library refresh my_library --jobs 4 --build-type OptimizedRelease
+```
+
 ```python
-manager.refresh_plugin_library("my_library", build_type="Debug")
+manager.refresh_plugin_library("my_library", jobs=4, build_type="Debug")
 manager.register_plugin_from_source(source_path, "my_library", build_type="Release")
 ```
 
-In the [plugin][glossary-plugin] manager GUI, **Register in Debug** selects the requested mode for
-registration/refresh. Unchecked selects Release, independently of the global
-RelWithDebInfo default. The read-only **Debug** column reports the recorded
-mode, with older untracked modes shown as Unknown in its tooltip. Worker-based
-registration keeps logs available; build failures retain diagnostic details.
+Whole-library registration/refresh defaults to four compilation workers.
+Schema preparation follows dependency order; prepared C++ plugin-type builds
+run in parallel before publication. Concrete plugin builds follow, with serial
+publication after preparation. `--jobs` limits compilation concurrency rather
+than making every registration phase parallel.
+
+The plugin manager GUI has a build-profile selector, defaulting to Release,
+and displays each recorded build type. An asterisk beside a library name marks
+registration-version differences; its tooltip explains the reason. Background
+registration keeps logs available, including compiler diagnostics.
+
+## Refresh, rebuild, and reload
+
+| Operation | Updates |
+| --- | --- |
+| `rpp library refresh LIBRARY` | Generated interfaces and compiled registered plugin/type artifacts from declared sources. |
+| CMake / `colcon build` | Native runtime, ROS/application executables, and installed source/configuration files. |
+| Runtime/ROS slot reload | A loaded instance, using existing registered artifacts; no compilation. |
+| `rpp registry migrate` | An existing home after a registrator upgrade, with backup and dependency-ordered regeneration. |
+
+After changing a shared schema or native header, stop affected applications,
+rebuild its consumers and refresh registered dependencies before dependents.
+For example, refresh `rpp_common` before `rpp_interfaces`, then the implementation
+library when their generated interfaces change. Restart applications after
+refreshing artifacts; a running process may retain its loaded shared libraries.
+
+Rebuilding a ROS node with colcon alone does not recompile plugins registered
+through RPP. Native helper layout changes also require a coordinated rebuild
+even when the Cap'n Proto contract version stays unchanged.
 
 ## Upgrade an existing registry
 
 After installing matching updated packages and rebuilding the native runtime,
-stop [plugin][glossary-plugin] managers and applications using generated interfaces. Preview the
+stop plugin managers and applications using generated interfaces. Preview the
 migration, then apply it:
 
 ```bash
@@ -134,6 +171,6 @@ Source references: [registry paths and settings](https://github.com/coe-marble/r
 [library manager](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/library_manager.py),
 and [C++ registration profiles](https://github.com/coe-marble/rpp_plugin_registrator/blob/develop/rpp_plugin_registrator/plugin_registrator/cpp.py).
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin-type]: glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

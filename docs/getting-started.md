@@ -97,5 +97,5 @@ interfaces/adapters and rebuild downstream C++ artifacts together.
 `rpp init-home --override` resets installed library registrations; use migration
 when preserving an existing registry.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

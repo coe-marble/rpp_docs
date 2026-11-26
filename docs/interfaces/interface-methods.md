@@ -1,20 +1,19 @@
 # Interface method reference
 
-Experimental native API contract, 2026-11-21. This document covers every method
-in the shared reference, control, model, estimation and hardware interfaces.
-RPP owns lifecycle and component resolution; `bind()` is preparation, not a
-replacement lifecycle system. Implementations and the native buffer/layout
-builder remain to be implemented.
+This reference describes the current shared Cap'n Proto methods. Schemas define
+signatures; the sections below explain calling and result semantics. See the
+[interface index](README.md) for implementations and source locations, and
+[shared layouts](shared-bind-and-runtime.md) for packing and frame rules.
 
 ## Reading the signatures
 
-All methods ending in `Desc` return descriptions and run during binding. `bind()`
-also runs inactive, after RPP parameters and typed slots are configured. It checks
-compatibility, calculates layouts, prepares numeric functions, and reserves all
-storage before activation. Reconfiguration invalidates affected bindings.
+Read `getDesc()` after configuration to prepare routes and buffers. Only the
+reference generator exposes `bind()`, for its sampling horizon; the other
+interfaces declare layouts through configuration and `getDesc()`.
+Reconfiguration invalidates affected bindings.
 
-StateDesc contains ordered field declarations, not offsets or total dimensions.
-The shared builder derives stored width `n`, tangent width `nt`, and each field's
+`FieldListDesc` contains ordered fields, not offsets or total dimensions.
+`FieldLayout` derives stored width `n`, tangent width `nt`, and each field's
 ranges from kind and size. See [layout and frame rules](shared-bind-and-runtime.md#state-fields-and-dimensions).
 Each target, reference and observation description is compiled the same way.
 
@@ -22,16 +21,15 @@ Each target, reference and observation description is compiled the same way.
 | --- | --- |
 | n / nt | Stored / tangent width of the bound state. |
 | nu / na / nm | Controller/model inputs / actuator commands / hardware measurements. |
-| H | ControlLaw.horizonDesc().offsetsNs length. |
-| nr[i] | Stored width of reference port i, for one horizon row. |
-| nz[p] / ne[p] | Stored / tangent width of observation port p. |
-| M | Fixed number of rows returned by ControlConstraint.bind(). |
+| H / R | ControlLawDesc.horizonLength / stored width of its reference layout. |
+| np / npt | Stored / tangent width of ModelDesc.prediction. |
+| nz / ne | Stored / tangent width of a model observation or selected estimator measurement. |
+| M | Stored width of ControlConstraintDesc.values. |
 
-Numeric matrices are flat row-major buffers. The `$realtime` methods are planned
-native calls with borrowed inputs and caller-owned outputs; the current generator
-does not yet enforce that policy. No descriptor parsing, allocation or Capn Proto
-serialization belongs in an active update. Inputs and writable outputs cannot
-alias. Each plugin has prepared scratch for its declared execution concurrency.
+Numeric matrices are flat row-major buffers. `$realtime` marks intended numeric
+execution; allocation behavior depends on the selected implementation and
+generated bindings. Native inputs can borrow prepared storage; retained results
+must keep their backing storage alive. See [ownership and execution limits](shared-bind-and-runtime.md#native-execution-and-ownership).
 
 All timestamps, durations and relative offsets use unsigned 64-bit nanoseconds:
 Cap'n Proto `UInt64`, C++ `std::uint64_t`, and Python integers in `[0, 2^64 - 1]`.
@@ -42,8 +40,9 @@ timestamps before converting them to this contract.
 
 `dtNs` is an elapsed
 integration/control interval. `inputDtNs` is the interval used for input rate/slew
-semantics; it can differ from a model's prediction substep. Both are positive
-where used; checked arithmetic rejects overflow. Physical watchdogs use a separate
+semantics; it can differ from a model's prediction substep. Zero-duration support
+depends on the operation; do not divide by an unvalidated interval.
+Checked arithmetic rejects overflow. Physical watchdogs use a separate
 monotonic clock. Future prediction times may differ from the current control tick.
 
 `status` always uses common/constants.capnp `code*`. Contract version 1 defines
@@ -53,7 +52,31 @@ it is not permission to use a partial or infeasible command. Other results do no
 authorize stale output reuse. On rejected estimator updates, preserve the last
 committed estimate. Software/model/solver failures are handled by the coordinator;
 hardware faults can require a coordinated stop because physical writes cannot be
-rolled back. Plugin methods do not change RPP lifecycle themselves.
+rolled back. A thrown plugin call is an unrecoverable execution error in the
+control worker, rather than an ordinary rejected update.
+
+## StateProvider
+
+Schema: [state/state_provider.capnp](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/state/state_provider.capnp).
+
+### getDesc
+
+Read the fixed `FieldListDesc` after configuration. `setState` and `getState`
+use that complete flattened order. The interface is a state buffer; ROS ingress
+and estimation are separate responsibilities.
+
+### setState
+
+Replace the complete sample with `state[n]` and acquisition `timeNs`.
+Validate width, finite coordinates, and quaternion normalization before commit.
+Rejection preserves the previous sample. The consumer owns freshness policy.
+
+### getState
+
+Return one coherent state view, acquisition time, and status. Return codeNotReady
+before the first accepted write. Retaining the view must prevent later writes
+from changing its values. The owner serializes numeric and lifecycle calls;
+buffer exhaustion must not create an allocation in the numeric path.
 
 ## ReferenceGenerator
 
@@ -216,8 +239,8 @@ preserves both. The coordinator retains deadlines per input value.
 
 `enabledAxes` is empty to enable all command axes, or contains `nu` boolean flags
 in command order. Disabled axes output zero and clear their controller history.
-PID axes restart without applying feedback from their disabled tick. All state
-and reference values remain present and valid; the mask does not change layouts
+PID axes restart without applying feedback from their disabled tick. State
+and reference values remain present; the mask does not change layouts
 or horizons. A cascade passes this mask to its innermost controller, whose command
 layout matches the cascade's final outputs.
 
@@ -225,6 +248,12 @@ layout matches the cascade's final outputs.
 result; optimization controllers must obey their configured work budget and
 return failure if no acceptable feasible command is available. The law calls
 bound model/constraint functions itself and never writes hardware.
+
+### getAuxiliaryState
+
+Read controller-owned described history and its timestamp with numeric updates
+paused. RPP handover uses `ControllerHandoverState`; a controller's history is
+separate from mapper history.
 
 ## ActuationMapper
 
@@ -259,6 +288,12 @@ next tick's previousControl and set previousControlValid=true. If unsupported, r
 codeUnsupported and leave that flag false. Other failures follow the configured
 fault policy. Hardware acknowledgements do not imply measured physical effort.
 
+### getAuxiliaryState
+
+Read mapper-owned described history and its timestamp with numeric updates paused.
+Stateless mappers return empty state and description. RPP handover uses
+`AllocatorHandoverState`, independently of controller auxiliary history.
+
 ## ControlConstraint
 
 Schema: [control/constraints.capnp](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/control/constraints.capnp).
@@ -266,12 +301,12 @@ Use these methods inside a controller that enforces an optimization feasible set
 such as MPC. A simple feedback law can omit constraint slots. These mathematical
 constraints do not replace physical hardware limits or watchdogs.
 
-### bind
+### getDesc
 
-Call before activation with `state` and scalar `commands` in the controller's
-input order. RPP parameters choose the constraint, resources, scales and any
-configured scene/model sources. `rows` fixes M, the number of constraints, and
-all output capacities. `status` reports compatibility; row counts stay fixed active.
+Read `ControlConstraintDesc` after configuration. `state` and `commands`
+declare candidate inputs; the Euclidean `values` fields declare M constraint rows.
+Parameters select resources, scales, and model/scene providers.
+Rows and output capacities remain fixed while configured.
 
 ### bounds
 
@@ -298,119 +333,77 @@ a local derivative, not an instruction to apply the candidate to hardware.
 
 ## Model
 
-Schema: [model/model.capnp](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/model/model.capnp). All numeric methods
-are mathematical evaluations on supplied arguments; they do not own the robot's
-posterior state, desired reference or hardware connection.
+Schema: [model/model.capnp](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/model/model.capnp).
+Numeric methods evaluate supplied arguments; they own no posterior, target,
+or hardware connection.
 
-### stateDesc
+### getDesc
 
-Call during binding to obtain `state`, the model's ordered state-field definition.
-Its kinds/sizes determine n and nt through the shared builder. Model parameters
-define physical coordinate roles without a separate control-specific layout.
+Read `ModelDesc` after configuration. It declares `state`, `inputs`,
+`prediction`, `observations`, `accelerations`, `efforts`, and `features`.
+Prediction and observation layouts can differ from the input state.
+Acceleration and effort layouts describe optional inverse dynamics.
 
-### inputsDesc
-
-Call during binding to obtain `inputs`, the nu scalar model-input channels in
-their required order and units. Controller outputs and estimator known inputs
-must match or use a prepared explicit mapping. Zero inputs are valid for an
-autonomous process/observation model.
-
-### bind
-
-Call before activation with requested physical `observations`, in port order.
-Each StateDesc defines the quantity, packing and frame of one observation. These
-are spaces to evaluate, not measured values or desired targets. Prepare all
-numeric functions and reject unsupported observation semantics. An empty list is
-valid for a process-only model. `inverseDynamicsSize` fixes both acceleration and
-effort width for inverseDynamics, or is zero when that operation is unsupported;
-this width does not describe their ordering. That ordering follows the model's
-configured generalized coordinates. `status` reports complete binding acceptance.
-
-### featuresDesc
-
-Call during binding to read the configured model's UInt8 `features` mask from
-model/constants.capnp: modelPredict=1, modelLinearize=2, modelObserve=4,
-modelObservationJacobian=8, modelInverseDynamics=16. Check algorithm requirements
-before activation. Linearize implies predict; observationJacobian implies observe.
-Retraction/difference are mandatory. ObservationDifference is mandatory for
-observed ports when observe is supported. Unsupported optional numerical methods
-return codeUnsupported; no graph construction or capability discovery occurs in a tick.
+Check the UInt8 feature mask before selecting the model: modelPredict=1,
+modelLinearize=2, modelObserve=4, modelObservationJacobian=8, and
+modelInverseDynamics=16. Linearization implies prediction; an observation
+Jacobian implies observation. Unsupported optional methods return codeUnsupported.
 
 ### predict
 
-Call for a simulation/prediction stage using `state[n]`, `input[nu]`, stage start
-`timeNs`, integration duration `dtNs`, and input slew interval `inputDtNs`.
-`next[n]` is the state at timeNs+dtNs. Input is held over the integration interval
-under the bound model's actuation semantics. Different substep durations must not
-silently change the input slew interval. `status` reports valid prediction.
+Evaluate supplied `state[n]` and `input[nu]` at start `timeNs`, integration
+duration `dtNs`, and input slew interval `inputDtNs`.
+Return `next[np]` in `desc.prediction` order at timeNs+dtNs.
+Input slew time is independent of any prediction substeps.
 
 ### linearize
 
-Call at the same arguments as predict when a filter or optimizer needs the
-discrete transition derivative. `a[nt*nt]` and `b[nt*nu]` satisfy, locally:
-
-```text
-y  = predict(x, u, time, dt, inputDt)
-y' = predict(retract(x, dx), u + du, time, dt, inputDt)
-difference(y, y') ~= a * dx + b * du
-```
-
-The input/output tangents follow the shared frame convention at x and y.
-`status` reports valid derivatives. A continuous-time Jacobian cannot be returned
-as a discrete transition without the required discretization.
+Use the same arguments and discrete propagation as predict.
+Return row-major `a[npt * nt]` and `b[npt * nu]`: output-tangent rows,
+state-tangent or input-value columns. A continuous-time Jacobian is not a
+substitute for the declared discrete transition.
 
 ### retract
 
-Call whenever a solver/filter needs to apply `delta[nt]` to `state[n]`.
-`next[n]` follows the shared field-kind operations, including normalized
-quaternions and frameId-axis rotation increments. `status` reports validity.
-This operation applies a supplied correction; it does not decide that correction
-or mutate an estimator. Quaternion filter covariance transport needs additional
-algorithm support beyond having this operation.
+Apply `delta[nt]` to `state[n]`, returning `next[n]` in `desc.state` order.
+Use the declared coordinate operations, including angle wrapping and quaternion
+normalization. This evaluates a supplied correction; it does not choose or store one.
 
 ### difference
 
-Call to compare `origin[n]` with `target[n]` in the same bound state layout.
-`delta[nt]` is target minus origin under the shared local coordinate convention,
-so retract(origin,delta) recovers target locally. It handles angle wrap and
-orientation geometry. `status` reports validity. It supplies no weights, priorities
-or tracking policy; the caller chooses the two arguments and how to use the result.
+Compare `origin[n]` and `target[n]` in `desc.state` order.
+Return their local target-minus-origin `delta[nt]`, so retraction recovers
+the target locally. The caller owns weighting and tracking policy.
 
 ### observe
 
-Call to predict a physical observation, for example a tool pose or an IMU-model
-output. `state[n]` and `input[nu]` are explicit candidates; zero-based `port`
-selects the bound observation. `timeNs` is evaluation time, and `inputDtNs` gives
-the input slew interval where the observation depends on actuation. `values[nz[port]]`
-contains h(x,u,t). `status` reports validity. This method does not subtract a goal
-or measurement, and the port must have been bound before activation.
+Evaluate supplied `state[n]`, `input[nu]`, `timeNs`, and `inputDtNs`.
+Return one flat `values[nz]` vector in `desc.observations` order.
+There is no observation-port argument on Model; consumers prepare their own
+subsets or configured model instances. The model does not subtract measurements
+or desired references.
 
 ### observationJacobian
 
-Call at the same arguments as observe when its local derivative is needed.
-`stateJacobian[ne[port]*nt]` and `inputJacobian[ne[port]*nu]` differentiate
-observationDifference(port,h(x,u),h(retract(x,dx),u+du)) at zero perturbation.
-`status` reports valid derivatives. For rotations this is not automatically the
-Jacobian of a tracking residual against a distant fixed target; the controller
-must include the relevant difference derivative.
+At the same candidate as observe, return
+`stateJacobian[ne * nt]` and `inputJacobian[ne * nu]`.
+Rows describe local observation increments; columns describe state increments
+or input values. For orientation tracking, a controller may also need the
+derivative of its difference operation against the chosen target.
 
 ### observationDifference
 
-Call for bound `port` with `origin[nz[port]]` and `target[nz[port]]`.
-`delta[ne[port]]` is the local target-minus-origin difference using that
-observation's field kinds and frameId axes. An estimator typically compares
-predicted to measured values; a controller chooses the argument order for its
-tracking cost. `status` reports validity. No measured or desired state is stored.
+Compare `origin[nz]` and `target[nz]` in `desc.observations` order and return
+`delta[ne]` in its tangent coordinates. There is no port argument.
+An estimator uses this for its innovation; a controller chooses the argument
+order and weighting for its tracking residual.
 
 ### inverseDynamics
 
-Call only when modelInverseDynamics is advertised, for example from a computed-
-torque controller. `state[n]` contains the configured positions/velocities;
-`acceleration[inverseDynamicsSize]` uses the model's generalized acceleration
-ordering, and `effort` has that same width and corresponding generalized effort
-ordering. These are not arbitrary observation-space accelerations or necessarily
-the nu input channels. `status` reports valid effort. Conversion/allocation to
-actuators remains control/mapper work.
+Call only when modelInverseDynamics is supported. Supply `state[n]` and
+acceleration values in `desc.accelerations` order. Return effort values in
+`desc.efforts` order. These layouts declare their widths and meanings explicitly;
+they need not equal the model input layout. Actuator conversion remains mapper work.
 
 ## Estimator
 
@@ -418,13 +411,13 @@ Schema: [estimation/estimator.capnp](https://github.com/coe-marble/rpp_interface
 The estimator owns the estimate, covariance and bounded input/measurement history.
 It calls configured model slots; models retain no second posterior state.
 
-### bind
+### getDesc
 
-Call before activation with `state`, known scalar `inputs`, and ordered
-`observations`. Resolve each observation to its configured model/output and
-prepare filter matrices, scratch and bounded history. Validate required model
-features and supported state/error-coordinate conventions. `status` reports
-compatibility. A quaternion descriptor alone does not establish quaternion EKF support.
+Read `EstimatorDesc` after configuration. `state` describes the owned estimate,
+`inputs` its known input, and `measurements` the indexed measurement layouts.
+The implementation resolves model slots, validates required features, and prepares
+matrices and history during configuration. The schema has no estimator `bind()`.
+A quaternion descriptor alone does not establish quaternion-filter support.
 
 ### initialize
 
@@ -447,8 +440,8 @@ acknowledges the committed advance. Obtain state/P afterward with estimate().
 
 ### correct
 
-Call to fuse `measurement[nz[port]]` from a bound zero-based `port` at acquisition
-`timeNs`. `covariance[ne[port]*ne[port]]` is R in that observation's tangent
+Call to fuse `measurement[nz]` from zero-based `measurementIndex` at acquisition
+`timeNs`. `covariance[ne*ne]` is R in that observation's tangent
 coordinates. The estimator uses the configured observation model and stored input
 appropriate to that measurement time, computes an innovation, and applies its
 configured gating/update policy. `status` acknowledges correction or explains
@@ -457,9 +450,9 @@ the posterior unchanged.
 
 Late data is accepted only within explicitly supported bounded replay/history
 policy; otherwise return codeStaleInput. Replay must reconstruct inputs and the
-correct discrete Q for every replay interval. This draft's Q argument does not by
-itself supply noise discretization for newly split intervals. Generic filters
-remain native; optional model/derivative providers may use CasADi.
+correct discrete Q for every replay interval. Q alone does not define newly split
+intervals; the selected replay policy must supply that meaning or reject the
+split. See [implemented replay policies](estimation/generic-estimation-and-localization.md#late-measurement-replay).
 
 ### estimate
 
@@ -480,73 +473,53 @@ than pretending a reset is an ordinary noisy correction. `status` reports accept
 
 Schema: [hardware/hardware_io.capnp](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/hardware/hardware_io.capnp).
 
-### interfacesDesc
+### getDesc
 
-Call during binding to obtain `interfaces`, the device's exported typed endpoint
-descriptions. Each name identifies an existing configured RPP subcomponent; typeId
-identifies its Capn Proto interface node, not its source-file ID. Resolve/check
-that slot with RPP contexts, then use active handles for calls. The method does
-not return a component instance or define another loader. Exported endpoints can
-share one device backend/connection and are configured before activation.
+Read `HardwareDesc.interfaces` after configuration. Each endpoint name identifies
+a configured RPP subcomponent, and `typeId` identifies its Cap'n Proto interface
+node. Resolve those endpoints through RPP contexts. The description returns no
+component instance and introduces no separate loader.
 
 ## HardwareIO
 
 Schema: [hardware/hardware_io.capnp](https://github.com/coe-marble/rpp_interfaces/blob/develop/plugin_types/hardware/hardware_io.capnp).
-This interface handles scalar numeric acquisition/commands. Camera/lidar and
-generic Data sensor endpoints remain future contracts.
+This handles numeric acquisition/commands. Generic image/scan payloads remain
+future contracts.
 
-### measurementsDesc
+### getDesc
 
-Call during binding for `channels`, the nm scalar entries returned by read, in
-exact order. Each describes quantity, unit, applicable frame/coordinate mapping
-and source name. Bind hardware feedback/state or estimator-ingress mappings once.
-This is not a sample, an automatic ROS publisher declaration or a sensor decoder.
+Read `HardwareIODesc` after configuration. `measurements` fixes the field order
+returned by read; `commands` fixes the order consumed by write and returned as
+accepted values. `limits` is a list of field-selecting `LimitDesc` records,
+using the [shared limit rules](shared-bind-and-runtime.md#routes-and-limits).
 
-### commandsDesc
-
-Call during binding for `channels`, the na scalar entries consumed by write, in
-exact order. Each identifies its physical resource, mode/quantity and units.
-Resolve controller ownership and mapper outputs against these channels. Modes
-of the same physical actuator share resource identity and cannot have conflicting owners.
-
-### limitsDesc
-
-Call during binding to obtain static `limits`, a common FloatMatrix with three
-rows and na columns: all lower bounds, all upper bounds, then all maximum absolute
-rates per second. Infinite bounds/rates disable those restrictions; NaN, negative
-rates or lower>upper are invalid. The mapper/coordinator caches these limits and
-prepares rate enforcement. Dynamic model constraints remain ControlConstraint work.
+The application prepares mappings and ownership. Measurements need not match
+the control state. Command modes of one actuator share its resource identity.
 
 ### read
 
-Call from the configured acquisition schedule. `values[nm]` follows measurementsDesc;
-`timeNs` is acquisition time, not read-call completion. Values form one coherent
-timestamped group. A driver needing independently timed streams exposes appropriate
-separate endpoints instead of silently assigning one time to unrelated samples.
-`status` reports availability/validity. This does not perform application localization.
-An unavailable source must not be replaced with an unmarked stale value.
+Return a coherent `values[nm]` vector and acquisition `timeNs`.
+Time is acquisition time, not call completion or publication time. Independently
+timed streams need appropriate separate endpoints. Status reports availability;
+an unavailable sample must not become unmarked stale feedback.
 
 ### write
 
-Call after ownership, numeric, limit and deadline validation with the complete
-`command[na]`. `accepted[na]` reports exactly what the endpoint acknowledged;
-clipping returns codeLimited with the clipped values. `status` reports the write
-result. Unknown acceptance or partial physical writes are failures, not success
-with the requested vector echoed back. Different devices have no implied atomic
-write transaction. On success, pass the accepted actuator values to feedbackMap.
+Supply the complete `command[na]` after application ownership, limit, and deadline
+checks. Return exactly the `accepted[na]` values acknowledged by the endpoint.
+Clipping returns codeLimited. Unknown acceptance or partial physical writes are
+failures; separate devices have no implied atomic transaction.
+Accepted commands can feed the mapper's feedback conversion.
 
 ### stop
 
-Call for the configured fault policy, cancellation policy or deliberate physical
-stop. `resources` contains prepared command-channel indices, not resource-name
-hashes or frame IDs. A nonempty request covers the selected physical resources;
-the driver handles all modes of each selected resource together. Empty or invalid
-selections are rejected. `mode` is hardware/constants.capnp stopConfigured,
-stopControlled, stopHold or stopDisable; stopInvalid is rejected. Supported
-mode/resource combinations are validated during configuration, with unsupported
-requests returning codeUnsupported.
+`resources` contains indices into `desc.commands.fields`, rather than scalar
+offsets, hashes, or frame IDs. The driver handles all modes of each selected
+physical resource together. Validate the selection and supported mode during
+configuration.
 
-`status` acknowledges initiation of the device's configured bounded stopping
-behavior; it does not prove mechanical rest. Verify completion through feedback
-and keep physical watchdogs active. The method does not implement reference
-cancellation, estimator reset or RPP lifecycle transitions.
+`mode` uses hardware/constants.capnp: stopConfigured, stopControlled, stopHold,
+or stopDisable. stopInvalid is rejected; unsupported requests return
+codeUnsupported. Status acknowledges the requested bounded stopping behavior,
+not proof of mechanical rest. Completion needs feedback. This method does not
+cancel references, reset an estimator, or change RPP lifecycle.

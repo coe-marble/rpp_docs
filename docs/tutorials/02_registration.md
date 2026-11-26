@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-Follow the [shared prerequisites](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/README.md#prerequisites-and-execution) and read
-[Tutorial 01](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/01_plugin_types_and_plugins.md).
+Follow the [shared prerequisites](README.md#prerequisites-and-execution) and read
+[Tutorial 01](01_plugin_types_and_plugins.md).
 Run the commands below from `rpp_dev/src/rpp_demos` in your installed RPP
 environment. Select the tutorial home before using the CLI:
 
@@ -29,7 +29,7 @@ folder, so source edits can be refreshed from the same location.
 
 ### Prepare a persistent source copy and link-register it
 
-Keep the editable tutorial [library][glossary-library] under the selected home:
+Keep the editable tutorial library under the selected home:
 
 ```bash
 mkdir -p "$RPP_HOME/tutorials"
@@ -46,7 +46,7 @@ use `rpp library refresh example_library` instead of registering it again.
 `rpp library list` shows the existing registration and its source location.
 
 Registration processes the declared types before their implementations. The
-example library contains two [plugin types][glossary-plugin-type] and two Python [plugins][glossary-plugin]:
+example library contains two [plugin types][glossary-plugin-type] and two Python plugins:
 
 | Type | Plugin |
 | --- | --- |
@@ -73,8 +73,8 @@ rpp library example_library info AffineProcessor
 ```
 
 `rpp registry list` lists implementations by default; `--type` selects types.
-The type description records the contract. The [plugin][glossary-plugin] description identifies
-its implementation source, language, and implemented type. For [library][glossary-library]-local
+The type description records the contract. The plugin description identifies
+its implementation source, language, and implemented type. For library-local
 inspection, use `rpp library example_library list --type` and
 `rpp library example_library list`.
 
@@ -104,8 +104,8 @@ include `on_configure`, `on_activate`, `on_deactivate`, and `on_cleanup`.
 
 ### Register individual files and refresh edits
 
-A [library][glossary-library] registration handles its manifest as a whole. The CLI also exposes
-registration of individual types and [plugins][glossary-plugin]. For an already registered type,
+A library registration handles its manifest as a whole. The CLI also exposes
+registration of individual types and plugins. For an already registered type,
 use `--override` when registering its schema again:
 
 ```bash
@@ -157,10 +157,10 @@ rpp pm
 2. Browse **Plugin Types** and select `ScalarProcessor`. Compare its description
    with the output of `rpp registry info example_library::ScalarProcessor`.
 3. Select `AffineProcessor` in the plugin table. Inspect its source language,
-   [plugin type][glossary-plugin-type], and metadata. Compare these with
+   plugin type, and metadata. Compare these with
    `rpp library example_library info AffineProcessor`.
 4. After editing the copied source, use **Refresh library** to refresh the
-   selected [library][glossary-library], then inspect its metadata again.
+   selected library, then inspect its metadata again.
 
 To perform the initial link registration through the GUI instead of the CLI,
 prepare the source copy above, click **Link library**, and select
@@ -173,6 +173,6 @@ The GUI and CLI use the same selected RPP home. Close the GUI and run
 `rpp library info example_library` to inspect the resulting metadata from the
 terminal.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-plugin-type]: ../glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-library]: ../glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."

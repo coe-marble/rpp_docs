@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-Follow the [shared prerequisites](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/README.md#prerequisites-and-execution) and complete
-[Tutorial 02: CLI registration](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/02_registration.md).
+Follow the [shared prerequisites](README.md#prerequisites-and-execution) and complete
+[Tutorial 02: CLI registration](02_registration.md).
 Keep using the same tutorial home:
 
 ```bash
@@ -20,7 +20,7 @@ Create two [components][glossary-component] from one implementation and inspect 
 
 An implementation is reusable; a component is a self-contained saved
 configuration of that implementation. [run.py](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/03_configuration/run.py) creates `processor` and `identity` with
-`Workspace.create_component`, using the same [plugin][glossary-plugin] and distinct component IDs.
+`Workspace.create_component`, using the same plugin and distinct component IDs.
 `component_parameter_store.save` persists processor settings. Identity uses
 the defaults. Both are configured without activation.
 
@@ -32,10 +32,10 @@ the defaults. Both are configured without activation.
 python3 tutorials/03_configuration/run.py
 ```
 
-The driver prints [component][glossary-component] IDs and [parameter][glossary-parameter] file paths. Look for gain `2`,
+The driver prints component IDs and [parameter][glossary-parameter] file paths. Look for gain `2`,
 offset `1` for processor, and gain `1`, offset `0` for identity.
 
-Resolution is [plugin][glossary-plugin] defaults, saved component settings, then builder overrides.
+Resolution is plugin defaults, saved component settings, then builder overrides.
 The driver demonstrates a string gain in saved settings and an infinite gain
 through `set_parameter_overrides`; both produce expected configuration failures.
 The final two lines are deliberately labeled `Expected failure`:
@@ -92,13 +92,13 @@ rpp ws component parameter get "$workspace" processor gain
 rpp ws component parameter set "$workspace" processor gain 2.0
 ```
 
-These commands edit the persisted [component][glossary-component] settings. A [runtime][glossary-runtime] reads them
-when it is constructed; an existing runtime keeps its [parameter][glossary-parameter] snapshot.
+These commands edit the persisted component settings. A runtime reads them
+when it is constructed; an existing runtime keeps its parameter snapshot.
 Rerunning the driver also resets its saved parameters to the tutorial values.
 
 ## GUI
 
-After running the example, open its saved [workspace][glossary-workspace] in the
+After running the example, open its saved workspace in the
 workspace GUI. Use a graphical session with PyQt6 available:
 
 ```bash
@@ -108,7 +108,7 @@ rpp ws --root "$workspace"
 ```
 
 `RPP_HOME` selects the registry used to resolve plugins; `--root` selects the
-workspace containing the saved [components][glossary-component].
+workspace containing the saved components.
 
 1. Select `processor` in the component tree. Inspect its name, plugin identity,
    and component folder, then compare them with
@@ -130,14 +130,14 @@ rpp ws component parameter get "$workspace" processor gain
 rpp ws component parameter set "$workspace" processor gain 2.0
 ```
 
-Editing saved [parameters][glossary-parameter] affects future runtime construction.
+Editing saved parameters affects future runtime construction.
 The GUI opens the same files used by the CLI and API. Rerunning the example
 resets its component parameters to the values shown in this tutorial.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
-[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
-[glossary-workspace]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
-[glossary-runtime]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
-[glossary-slot]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#slot "Slot: a named, typed location for components in a script or composite plugin."
-[glossary-parameter]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-library]: ../glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-workspace]: ../glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
+[glossary-runtime]: ../glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
+[glossary-slot]: ../glossary.md#slot "Slot: a named, typed location for components in a script or composite plugin."
+[glossary-parameter]: ../glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."

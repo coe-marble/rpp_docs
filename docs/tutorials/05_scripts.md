@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-Follow the [shared prerequisites](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/README.md#prerequisites-and-execution) and complete
-[Tutorial 02: CLI registration](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/02_registration.md).
+Follow the [shared prerequisites](README.md#prerequisites-and-execution) and complete
+[Tutorial 02: CLI registration](02_registration.md).
 Keep using the same tutorial home:
 
 ```bash
@@ -22,10 +22,10 @@ to update the linked library. Tutorial 04 introduces the [runtime][glossary-runt
 ## Description
 
 Define named [component][glossary-component] [slots][glossary-slot], assign saved components to them, load their [script][glossary-script]
-[runtime][glossary-runtime], and execute a Python script body. `ScalarPipeline` transforms each input
+runtime, and execute a Python script body. `ScalarPipeline` transforms each input
 with an affine processor and feeds the result into a stateful accumulator.
 
-Its `COMPONENTS` declaration maps slot names to [plugin][glossary-plugin] contracts:
+Its `COMPONENTS` declaration maps slot names to plugin contracts:
 
 ```python
 class ScalarPipeline:
@@ -55,10 +55,10 @@ Read the standalone [runner](https://github.com/coe-marble/rpp_demos/blob/develo
 python3 tutorials/05_scripts/run.py
 ```
 
-The runner makes the registered example [library][glossary-library] a [workspace][glossary-workspace]. It creates or
+The runner makes the registered example library a workspace. It creates or
 reuses `pipeline_processor` (`AffineProcessor`, gain `2`, offset `1`) and
 `pipeline_accumulator` (`AccumulatingProcessor`). `Workspace.create_script`
-reads the existing library [script][glossary-script]'s [slot][glossary-slot] declarations and publishes a script
+reads the existing library script's slot declarations and publishes a script
 description under the library's `.rppws/script_descriptions` directory.
 The runner recreates the example's assignments on each run:
 
@@ -67,7 +67,7 @@ workspace.assign_component_to_script(script, "processor", processor_record.id)
 workspace.assign_component_to_script(script, "accumulator", accumulator_record.id)
 ```
 
-The `Default` configuration now contains [component][glossary-component] IDs and [plugin][glossary-plugin] identities for
+The `Default` configuration now contains component IDs and plugin identities for
 both slots. The builder uses the library-qualified script identity to resolve
 that description within this workspace:
 
@@ -83,7 +83,7 @@ of saved slot configuration.
 
 ### Configure, activate, and execute
 
-The runner configures the loaded [components][glossary-component], then activates the context's
+The runner configures the loaded components, then activates the context's
 subcomponents explicitly:
 
 ```python
@@ -92,9 +92,9 @@ context = runtime.get_context()
 context.activate_subcomponents().require_success("activate pipeline components")
 ```
 
-A [script][glossary-script] [runtime][glossary-runtime] has [slots][glossary-slot] and services rather than a root [plugin][glossary-plugin] instance.
+A script runtime has slots and services rather than a root plugin instance.
 There is no `runtime.get_instance()` for scripts. The runner uses standard
-Python `runpy.run_path()` to load the [library][glossary-library]'s class and calls its body:
+Python `runpy.run_path()` to load the library's class and calls its body:
 
 ```python
 module = runpy.run_path(str(script.path))
@@ -130,18 +130,18 @@ rpp ws component list "$workspace"
 rpp ws component parameter get "$workspace" pipeline_processor
 ```
 
-The [script][glossary-script] description is at
+The script description is at
 `$RPP_HOME/tutorials/example_library/.rppws/script_descriptions/scalar_pipeline.json`.
-Its `Spec` contains the [slot][glossary-slot] contracts, while
-`Configurations.Default.Components` contains their selected [component][glossary-component] IDs and
-[plugin][glossary-plugin] identities. Changing assignments selects components for future [runtime][glossary-runtime]
+Its `Spec` contains the slot contracts, while
+`Configurations.Default.Components` contains their selected component IDs and
+plugin identities. Changing assignments selects components for future runtime
 construction without changing the script's processing logic.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
-[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
-[glossary-workspace]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
-[glossary-runtime]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
-[glossary-script]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#script "Script: application logic declaring named component slots and using their assigned components."
-[glossary-slot]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#slot "Slot: a named, typed location for components in a script or composite plugin."
-[glossary-parameter]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-library]: ../glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-workspace]: ../glossary.md#workspace "Workspace: a project directory containing saved component and script configuration in .rppws."
+[glossary-runtime]: ../glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
+[glossary-script]: ../glossary.md#script "Script: application logic declaring named component slots and using their assigned components."
+[glossary-slot]: ../glossary.md#slot "Slot: a named, typed location for components in a script or composite plugin."
+[glossary-parameter]: ../glossary.md#parameter "Parameter: a named configuration value resolved for a component instance."

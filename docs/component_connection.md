@@ -23,7 +23,7 @@ For native-only instance enumeration, Python also provides
 `get_subcomponent_instance()` and `enumerate_subcomponent_instances()`.
 These reject adapted children; a child view's `get_instance()` can expose its
 adapter. C++ uses `get_subcomponent<Type>(slot, name)` for typed access.
-List slots require the [component][glossary-component] name; single/optional slots can select their
+List slots require the component name; single/optional slots can select their
 current entry when it is omitted.
 
 Generated adapter methods expose synchronous calls. Python adapter clients also
@@ -58,7 +58,7 @@ for its own foreign descendants.
 `ExternalComponentProcessRegistry` maps languages to server commands. Builders
 allow custom commands through `register_external_component_server()`. A process
 owns its subprocess, transport connection, adapter connections, and call executor;
-a connection alone does not own the [component][glossary-component] tree or subprocess. Shared hosts
+a connection alone does not own the component tree or subprocess. Shared hosts
 stay alive until their final owning runtime releases them.
 
 `ComponentCallExecutor` provides a dedicated transport event loop. Synchronous
@@ -71,7 +71,7 @@ its KJ loop and waits for its result; it is not a nonblocking application future
 The component servers expose the shared `PluginRuntime` wire interface. C++'s
 control endpoint is implemented by `RpcControlService`/`RpcControlClient`,
 separately from application runtime ownership. Construction prepares transports
-and starts servers with unconfigured roots; it does not activate [plugins][glossary-plugin].
+and starts servers with unconfigured roots; it does not activate plugins.
 
 ## Lifecycle across the boundary
 
@@ -80,7 +80,7 @@ to the caller. Native activation/deactivation and typed handover are supported;
 adapted activation/deactivation and typed handover remain unsupported.
 Applications and hosts must use matching generated protocol versions.
 
-The ordinary deployment path uses local [component][glossary-component]-server processes. Treat
+The ordinary deployment path uses local component-server processes. Treat
 remote-machine placement as planned rather than a documented deployment feature.
 
 ## C++ RPC result lifetime
@@ -111,6 +111,6 @@ if needed. Each server owns cleanup of its descendants.
 See [C++ construction and ownership](cpp-context-flow.md) and
 [registry compatibility](registry.md#generated-code-compatibility) for details.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin-type]: glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

@@ -52,7 +52,7 @@ Use Linux with `/proc`, ROS 2 Lyrical or a compatible ROS 2 installation, and
 an installed RPP Python development environment. Source a current RPP C++
 overlay built from the same checkout as the Python runtime. The registration
 step needs the RPP development toolchain, including its supported Cap'n Proto
-version. The C++ drivers and registered [plugins][glossary-plugin] should use Release builds.
+version. The C++ drivers and registered plugins should use Release builds.
 
 The commands below use the development image workspace at
 `/workspaces/rpp/ros2_ws`. Substitute your current checkout and overlay paths
@@ -84,7 +84,7 @@ source "$RPP_BENCH_ROOT/install/setup.bash"
 ```
 
 `prepare.py` explicitly generates and compiles registered RPP interfaces and
-[plugins][glossary-plugin]. It creates a new state directory, copies the example library, and
+plugins. It creates a new state directory, copies the example library, and
 creates isolated script/workspace configurations. It does not modify your
 regular RPP home. If the state directory already exists, reuse it; preparation
 refuses to overwrite it. After changing the contract or plugins, prepare a
@@ -167,15 +167,11 @@ the result dangling. The 1 MiB C++-sender subprocess cases in the saved results
 exited with `SIGSEGV`; this lifetime defect is consistent with those crashes.
 Smaller calls could also appear to succeed while reading invalid memory.
 
-The registrator now moves the original RPC response into shared ownership.
-Returned struct, list, and data views retain that response, with no payload
-clone and no `from_wire` call for ordinary method results. Nested views share
-the same owner. Executor-managed responses are destroyed on their existing RPC
-worker when the final view is released. Release all response views before
-closing the runtime/executor; shutdown is unchanged. Direct clients without an
-executor must release their views on the original RPC thread before closing
-its client context/event loop. The fix needs a fresh registration and rebuild
-because generated adapter code is compiled into shared libraries.
+Current generated views retain the original response. See
+[RPC result lifetime](../component_connection.md#c-rpc-result-lifetime) for
+ownership, thread affinity, and shutdown rules. Acquiring the fix requires
+fresh registration and a rebuild because generated adapters are compiled into
+shared libraries.
 
 Use a new state directory with the updated registrator:
 
@@ -258,7 +254,7 @@ its standalone serialized size is provided for comparison. Failed or timed-out
 traffic does not count toward successful application bandwidth.
 
 CPU snapshots bracket only the steady-state measurement phase. They include
-the source, responder, RPC executor threads, and [component][glossary-component] subprocesses.
+the source, responder, RPC executor threads, and component subprocesses.
 The runner and any external middleware daemons are excluded. Snapshots use
 Linux process CPU ticks; their resolution and slightly wider sampling window
 are recorded. If the endpoint process tree changes between snapshots, total
@@ -292,5 +288,5 @@ Preserve raw data when comparing tail latency across versions. After all
 processes stop, the dedicated state/build directories can be removed without
 unregistering anything in your normal RPP home.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

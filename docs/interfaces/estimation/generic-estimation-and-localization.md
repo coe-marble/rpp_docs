@@ -1,88 +1,52 @@
 # Generic estimation and localization
 
-Proposal for review, 2026-11-21.
+`rpp_localization` currently contains both generic estimation machinery and
+navigation-specific composition. There is no separate implemented
+`rpp_estimation` package. Shared contracts belong to `rpp_interfaces`;
+the numerical cores do not depend on ROS messages or CasADi.
 
-Create rpp_estimation for reusable estimation algorithms. Build localization
-from those algorithms plus navigation-state and sensor models. Shared contracts
-belong in rpp_interfaces; implementations remain in their respective libraries.
-The generic estimator and control foundations require neither ROS nor CasADi.
-
-The [shared route and schematic](../shared-bind-and-runtime.md) defines the
-common descriptions and planned execution path. StateDesc, StateFieldDesc,
-ChannelDesc and numeric constants live in rpp_interfaces/common and are already
-used by the flat-buffer control draft. Estimation reuses them without importing
-the control domain. The Model and Estimator schemas now declare those draft
-boundaries; filter extraction and implementations remain planned.
+Use the [method reference](../interface-methods.md#estimator) for the public
+contract and [shared layouts](../shared-bind-and-runtime.md) for dimensions,
+frames, and covariance packing.
 
 ## Responsibilities
 
-| Library | Responsibility |
+| Layer | Current owner |
 | --- | --- |
-| rpp_interfaces | State/measurement descriptions and numeric process-model, observation-model and estimator contracts, alongside the control contracts. |
-| rpp_estimation | Generic EKF/UKF algorithms, numerical validation, bounded measurement processing and reusable estimation execution. |
-| rpp_localization | Navigation state conventions, process/sensor-model adapters, frame bindings and localization compositions. |
-| MORE and optional CasADi adapters | Shared dynamics/observation definitions and prepared numerical functions or derivatives. |
-| Optional ROS integration | Sensor input, estimate publication, TF and clock translation. |
+| Estimator/Model contracts and field helpers | `rpp_interfaces` |
+| Runtime-sized EKF/UKF, workspaces, checkpoints, replay | `rpp_localization/include/rpp_localization/estimation` |
+| Native plugin adapters | `rpp_localization::Ekf`, `Ukf`; instrumented `ProfiledEkf`, `ProfiledUkf` for benchmarks |
+| Navigation model | `rpp_localization::NavigationModel` |
+| Generic coordinator | `GenericLocalizationScript` |
+| ROS ingress/publication and worker ownership | `EstimatorScriptNode` |
+| Odometry, pose, twist, IMU, and TF conversion | The localization ROS `NavigationInterface` |
 
-Localization provides a 15-state EKF composition. It does not implement a second
-EKF algorithm: a generic EKF is configured with the navigation model and required
-sensor models. The same estimator can later support actuator-state estimation,
-joint-state estimation, bias estimation or other configured state spaces.
+An estimator owns state, covariance, and history. Its model evaluates supplied
+state/input and owns no second posterior. `SharedEstimatorBase` provides common
+Gaussian-filter adaptation; other estimator families can implement
+`rpp_interfaces::Estimator` directly.
 
-## Similar execution pattern to control
+## Configuration and execution
 
-Use RPP typed slots, parameters and lifecycle for estimator and model composition.
-Description getters end in `Desc`. Binding resolves dimensions, state meaning,
-measurement models, units, frames and noise configuration before activation.
-Numeric calls use prepared buffers and fixed capacities while active. Categories
-use stable UInt8 constants; dimensions, identifiers and timestamps retain their
-appropriate widths. Reuse existing common numeric containers and geometry.
+The estimator's `getDesc()` declares state, known input, and indexed measurement
+layouts. Configuration validates model capabilities and prepares field routes,
+Eigen workspaces, decompositions, output pools, queues, and history. Initialize
+or reset the posterior while inactive, then activate through RPP lifecycle.
 
-The conceptual contracts are:
+The ROS executor converts sensors, handles lifecycle/reset operations, services
+offloaded replay, and publishes estimates. A dedicated numerical worker processes
+prepared ingress and native guarded estimator/model calls. RPC components are
+rejected inside this numerical chain. The supplied executables use a
+SingleThreadedExecutor for ROS-side ownership.
 
-| Component | Calls and responsibility |
-| --- | --- |
-| Estimator | Initialize/reset an estimate, predict to a time, correct with a measurement and read the resulting estimate. Own estimated state and covariance. |
-| Process model | Predict state from state, known inputs and elapsed time; supply transition derivatives and process-noise mapping when required. |
-| Observation model | Predict a sensor reading from state; supply measurement derivatives and the innovation/residual convention. |
-| State operations | Define state increments, residuals and, where needed, manifold retraction and covariance-coordinate transport. |
-| Measurement ingress | Validate sensor identity, acquisition time, units, frame, covariance and model binding before scheduling a correction. |
+Queues and snapshot pools have fixed capacities. Full ingress reports
+codeBudgetExceeded; retaining all output slots prevents another snapshot until
+one is released. Publication may drop snapshots while estimation continues.
+Reconfiguration pauses the worker and rebuilds routes/storage.
 
-These responsibilities are declared in the experimental Model/Estimator schemas.
-A process provider uses Model.predict/linearize; an observation provider uses
-Model.observe/observationJacobian/observationDifference. RPP slots and prepared
-port maps connect them to the estimator. The [boundary contract](../component-boundaries.md)
-defines their buffer sizes, time/noise rules and ownership. Implementations and
-legacy compatibility adapters are still required.
+## The 15-state navigation composition
 
-## Generic state and measurements
-
-State dimension is selected during configuration rather than fixed to 15.
-A measurement has its own dimension, which can differ from the state dimension.
-For EKF, the observation model supplies h(x) and its Jacobian H. A measurement
-can therefore describe a nonlinear observation, not only selected state entries.
-The existing masked-state correction is one useful observation model.
-
-Estimation binds common StateDesc: ordered field kinds, vector sizes and frame names.
-Binding derives all offsets and stored/tangent dimensions with the shared builder.
-An estimate is a flat List(Float64), with covariance in a separate flat row-major
-buffer. Its stored and local-error dimensions are fixed during binding. A
-prepared source map selects the fields needed by the controller's state buffer.
-Controllers bind that same common StateDesc directly, alongside reference and
-command descriptions. Robot-specific coordinate roles remain inside their model
-plugins. Estimation-specific descriptions add measurement/noise semantics without
-duplicating geometry or dimension records.
-
-For Euclidean state, covariance uses the state dimension. For a manifold state,
-covariance uses the local-error dimension, which can differ from the stored
-configuration dimension. Angle wrapping and quaternion residuals must follow
-the selected state/observation model rather than hard-coded navigation indices.
-Support these capabilities explicitly; a generic vector alone is insufficient
-to claim support for every attitude or error-state filter.
-
-## The 15-state localization composition
-
-Preserve the existing navigation ordering:
+The bundled navigation model uses:
 
 ```text
 [x, y, z, roll, pitch, yaw,
@@ -90,77 +54,61 @@ Preserve the existing navigation ordering:
  ax, ay, az]
 ```
 
-Frame, velocity and angular-rate conventions remain explicit in the navigation
-model. A localization composition selects:
+That ordering belongs to the navigation model and configuration, rather than a
+hard-coded generic filter dimension. Prepared observation subsets retain sensor
+masks and covariance cross terms.
 
-```text
-estimator:        generic EKF from rpp_estimation
-process model:   15-state navigation model from rpp_localization
-observations:    configured pose, velocity, IMU and other observation models
-output binding:  existing localization estimate or mapped control-state input
-```
+Current Gaussian cores support Euclidean and scalar-angle coordinates.
+Quaternion descriptors and tangent-sized transport buffers do not by themselves
+establish quaternion/error-state Gaussian-filter support.
 
-The 15-state dimension, navigation ordering, selected angles and sensor choices
-belong to that composition. Generic EKF code handles propagation and correction
-using the bound numerical model operations. UKF can reuse the same modeling and
-state-operation infrastructure with its own algorithm requirements.
+The navigation ROS adapter handles sensor selection, frame transforms,
+relative/differential poses, gravity removal, and planar constraints.
+It publishes filtered odometry and can project state for control. See the
+[package runbook](https://github.com/coe-marble/rpp_localization/blob/develop/README.md)
+for launch/configuration and the generic ROS topic/service table.
 
-## Reuse and CasADi
+## Late-measurement replay
 
-Extract and generalize the existing numerical implementation rather than
-developing another independent EKF. The current Ekf constructor explicitly
-requires STATE_SIZE=15, correction selects measurement entries from that state,
-and angle handling uses navigation indices. Those assumptions must move behind
-model/observation/state-operation contracts before the algorithm is generic.
+`history_capacity` bounds prepared event/checkpoint storage. Zero disables
+history and spare-estimator construction.
 
-Use the existing native implementation for the estimator mechanisms. CasADi
-adapters may provide process/observation functions and Jacobians using the same
-MORE graph utilities used by simulation and control. Model definitions can be
-shared while each consumer retains its own state, covariance and workspace.
-Reuse existing MORE dynamics and sensor functions where their declared inputs,
-outputs and frames match; localization adapters bind those functions to the
-navigation state and measurement conventions. Do not reimplement their physics
-or sensor equations in a second library. A model with different measurement
-semantics must be selected explicitly rather than silently relabeled.
-CasADi is required by the dynamics/MPC extensions that use it, not the generic
-estimator or controller core.
+The default `replay_execution=ros` uses two identically configured physical
+estimator/model instances behind one logical estimator. A late measurement
+forks history to the idle instance. The worker continues live processing while
+the ROS executor repairs/catches up the candidate. Adoption changes the running
+instance only at an execution boundary after both consumed the same event sequence.
 
-## Time, lifecycle and communication
+A replay service borrows bounded batches and merges queued events in timestamp
+order, sharing one rewind for the affected batch. `replay_events_per_tick`
+defaults to 64. Preparation allocates views, sorting storage, and checkpoints.
+Stale or unsupported corrections are skipped; other replay failure retains the
+live posterior. `replay_execution=worker` keeps replay inline in one estimator.
 
-Measurements retain acquisition timestamps in a declared clock domain. Separate
-state reference time from arrival time. Prediction and correction ordering,
-late-measurement rejection/replay, gating and history limits are explicit policy.
-The existing localization implementation has bounded replay behavior that must
-be preserved through its compatibility composition.
+Prediction receives additive discrete Q. The default `replay_noise_policy=reject_split`
+rejects corrections that need an undefined subdivision of Q.
+`constant_rate` explicitly permits proportional splitting of the frozen
+per-interval noise density. It does not recompute state-dependent noise under
+a revised trajectory.
 
-Build replay storage and scratch outside active processing. Each configured
-measurement source has known bounds; optional capabilities describe which
-model operations and state representations the algorithm supports. Return
-numeric status for ordinary validation/model failures and keep RPP lifecycle
-transitions under runtime control.
+Rebuild the ROS node and refresh registered plugins together after native
+estimator/replay-header changes. The native binding rejects incompatible shared
+estimator ABIs. This is separate from Cap'n Proto contract version 1.
 
-Cross-process communication and sensor decoding happen in configured ingress
-and publication components. The estimator consumes typed numerical measurements.
-Control receives a timestamped filtered estimate through a validated mapping;
-it does not re-run the estimator or overwrite filtered state with raw hardware
-channels.
+## Legacy compatibility and measurement
 
-## Migration sequence
+The previous fixed-size ROS implementation remains available through legacy
+entrypoints for comparison. The generic stack and legacy stack have separate
+implementations and execution behavior; their equivalence needs measured evidence.
 
-1. Define shared neutral descriptions and estimator/model contracts in
-   rpp_interfaces, reviewing common requirements with control and MORE first.
-2. Extract reusable EKF mathematics and workspace management into rpp_estimation;
-   remove fixed navigation dimensions and selected-state-only measurement logic
-   from the generic implementation.
-3. Implement the 15-state navigation and observation models in rpp_localization.
-   Adapt the existing EKF15/UKF15 public contracts to the generic machinery.
-4. Preserve existing payload IDs, status values, timestamps, frames, covariance
-   handling, gating and replay behavior during the compatibility migration.
-   The existing LocalizationStatus uses UInt16 and different success values;
-   new shared UInt8 status conventions require explicit translation.
-5. Add optional CasADi-backed process/observation adapters and additional
-   estimation compositions using the same core.
+The [bag parity runbook](https://github.com/coe-marble/rpp_localization/blob/develop/test/robot_localization_parity/README.md)
+owns build options, replay flags, run commands, counters, and report generation.
+`PARITY_RL_REPLAY` applies to generic, legacy, and external robot_localization.
+Reports should show both background jobs and internal rewinds.
 
-Existing registered localization schemas and plugins are unchanged by this
-proposal. Migration of their schema ownership and generated C++ namespaces
-requires updates to their consumers, compatibility handling and later verification.
+Worker CPU excludes offloaded ROS replay. Compare total process CPU or the sum
+of the disjoint worker-estimation and replay CPU scopes when assessing estimator
+cost. Replay-state counts also depend on checkpoint granularity.
+
+Consult a specific saved run for accuracy and cost, rather than treating
+implementation presence or regression-test source as validation.

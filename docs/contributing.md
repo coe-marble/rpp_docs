@@ -2,18 +2,23 @@
 
 `rpp_docs` owns RPP user and developer documentation: architecture, public API
 usage, setup, tutorials, benchmarks, integration workflows, and design records.
-Implementation repositories keep concise README entry points linking here.
+Implementation repositories keep concise README entry points. Detailed package
+runbooks can stay beside their launch/configuration sources and are linked from
+the relevant guide.
 
 ## Where to document a change
 
-- Update the central guide when public behavior or an API changes, including
-  package-specific usage. Avoid maintaining the same guide in a package README.
+- Update the topic's primary guide when public behavior or an API changes.
+  Use the [documentation map](../README.md) to find it. Link from other pages
+  rather than copying its explanation, signatures, or setup procedure.
 - Keep executable examples, schemas, fixtures, and source API comments beside
   code. Link to them from the guide rather than copying whole implementations.
 - Add an inventory entry when an implementation submodule is added or renamed.
 - Leave links at former guide locations when moving documentation.
 - Label historical plans and checkpoint results explicitly; current guides
   describe the implementation in the supported integration checkout.
+- Keep [implementation status](status.md) and the repository catalog current.
+  Put unimplemented proposals under [plans](plans/README.md), not in an API guide.
 
 ## Links and commands
 
@@ -24,23 +29,24 @@ pointers when useful for existing links.
 
 ## Glossary links
 
-Link the first prose mention of [Plugin Type][glossary-plugin-type], [Plugin][glossary-plugin], and [Component][glossary-component] in each
-section to the [glossary](glossary.md). Keep the original capitalization and
-pluralization in the visible text. Use reference links with short title text
-so readers can hover for a definition or click through for more detail:
+Link the first useful prose mention of [Plugin Type][glossary-plugin-type],
+[Plugin][glossary-plugin], and [Component][glossary-component] on a page to the
+[glossary](glossary.md). Avoid linking every repetition. Keep the original
+capitalization and pluralization in the visible text. Use reference links with
+short title text so readers can hover for a definition or click through:
 
 ```markdown
 A [Plugin Type][glossary-plugin-type] defines the contract implemented by a
 [Plugin][glossary-plugin]. A [Component][glossary-component] saves its configuration.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin-type]: glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
 ```
 
-The absolute glossary URLs also work in implementation repository READMEs.
-Leave headings, code blocks, inline code, commands, identifiers, and existing
-links unchanged. Historical plans retain their original terminology.
+Use relative glossary links inside rpp_docs and absolute glossary URLs in other
+repositories. Do not add glossary markup inside code, commands, or identifiers.
+Historical plans retain their original terminology.
 
 ## Command examples
 
@@ -48,6 +54,9 @@ State the working directory, Python environment, ROS overlay, and registry home
 required by command examples. Distinguish preparation/build instructions from
 measurements and distinguish implementation status from verified results.
 Review examples against current source APIs; older package prose may lag.
+For shared interfaces, compare method names and dimensions with the schema.
+Do not copy complete signatures into several guides or infer implementation
+support from a schema's presence.
 
 ## Review
 
@@ -71,6 +80,6 @@ Record compatibility constraints where generators, runtimes, and compiled
 artifacts must move together. Keep migration and regeneration instructions
 current when a public protocol or generated interface changes.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin-type]: glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

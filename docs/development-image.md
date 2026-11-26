@@ -12,7 +12,7 @@ valid.
 
 Container filesystem changes are lost when a container is removed, so temporary development containers should not be the only copy of your work. To make the workspace persistent, export its configured files to the host once. Bind-mount that host copy back at the same path whenever you start a development container.
 
-## 1. Obtain the image
+## Obtain the image
 
 The development image tag is `ghcr.io/coe-marble/rpp-dev:lyrical`:
 
@@ -41,8 +41,8 @@ docker run --rm -it \
 ```
 
 Inside the container, read
-[Tutorial 01](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/01_plugin_types_and_plugins.md)
-and follow [Tutorial 02's CLI registration steps](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/02_registration.md).
+[Tutorial 01](tutorials/01_plugin_types_and_plugins.md)
+and follow [Tutorial 02's CLI registration steps](tutorials/02_registration.md).
 Those two tutorials have no Python drivers. After registration, run the API
 examples in separate Python processes:
 
@@ -104,7 +104,7 @@ the terminal session has no display selected. A remote or headless Docker host
 needs a graphical session or display forwarding before these GUI commands can
 open visible windows.
 
-## 2. Export the configured workspace
+## Export the configured workspace
 
 Run these commands from an empty development directory on the host:
 
@@ -118,7 +118,7 @@ docker rm rpp-dev-export
 The copy includes the source repositories and the workspace's `build/`,
 `install/`, and `log/` directories.
 
-## 3. Develop using the exported workspace
+## Develop using the exported workspace
 
 ```bash
 docker run --rm -it \

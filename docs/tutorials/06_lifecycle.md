@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-Follow the [shared prerequisites](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/README.md#prerequisites-and-execution) and complete
-[Tutorial 02: CLI registration](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/02_registration.md).
+Follow the [shared prerequisites](README.md#prerequisites-and-execution) and complete
+[Tutorial 02: CLI registration](02_registration.md).
 Keep using the same tutorial home:
 
 ```bash
@@ -42,11 +42,11 @@ python3 tutorials/06_lifecycle/run.py
 
 The script uses `Workspace`, `ComponentRequest`, and
 `ComponentRuntimeBuilder` directly to create `source` and `target`. It first
-shows that activation before configuration fails and that the inactive [plugin][glossary-plugin]
+shows that activation before configuration fails and that the inactive plugin
 rejects calls. After configuration and activation, the source accumulates `3`
 and `4`.
 
-The handover uses the public [runtime][glossary-runtime] methods explicitly:
+The handover uses the public runtime methods explicitly:
 
 ```python
 handover = source.deactivate()
@@ -76,7 +76,7 @@ reads its own snapshot, deactivates, reactivates with that state, and processes
 `ExitStack` closes both runtimes on exit, including if an operation raises.
 A retained plugin reference rejects calls after shutdown.
 
-This example uses native Python [components][glossary-component]. Remote adapter activation and
+This example uses native Python components. Remote adapter activation and
 handover are not supported. Cleanup resets the instance's total; saved component
 files do not persist the exported handover payload.
 
@@ -96,10 +96,10 @@ rpp library example_library info AccumulatingProcessor
 ```
 
 The CLI shows saved identities and metadata. Use the script's output to observe
-[runtime][glossary-runtime] transitions and the application state transferred between instances.
+runtime transitions and the application state transferred between instances.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
-[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
-[glossary-runtime]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
-[glossary-lifecycle]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#lifecycle "Lifecycle: managed states and transitions for component configuration, activation, and shutdown."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-library]: ../glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-runtime]: ../glossary.md#runtime "Runtime: an application-owned execution handle built from saved configuration."
+[glossary-lifecycle]: ../glossary.md#lifecycle "Lifecycle: managed states and transitions for component configuration, activation, and shutdown."

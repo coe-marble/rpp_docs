@@ -28,7 +28,7 @@ rpp --rpp-home ./demo-home registry list --json
 `init-home` initializes the home layout; `--override` deletes and recreates
 generated state and installed library registrations. Use migration when upgrading
 an existing home. `--init-anot-only` initializes only the annotation schema.
-`pm` launches the [plugin][glossary-plugin] manager. `ws` without a subcommand launches the
+`pm` launches the plugin manager. `ws` without a subcommand launches the
 workspace GUI, optionally at `--root`.
 
 ## Registry migration
@@ -55,7 +55,7 @@ rpp registry config get SETTING_NAME
 rpp registry config set SETTING_NAME VALUE
 ```
 
-`describe` prints parsed metadata and validation results for Python/C++ [plugins][glossary-plugin]
+`describe` prints parsed metadata and validation results for Python/C++ plugins
 or Cap'n Proto [plugin types][glossary-plugin-type]. `list` shows plugin implementations by default;
 `--type` selects plugin types. `info` reads plugin or plugin-type metadata using
 a qualified name, a unique short name, or an internal ID. Ambiguous names are
@@ -80,15 +80,15 @@ rpp registry config set RPP_CPP_CORE_PATH /absolute/path/to/build/rpp_cpp
 ```
 
 See [registration profiles](registry.md#c-registration-profiles) for Debug,
-Release, and RelWithDebInfo behavior and GUI overrides.
+Release, ReleaseWithSymbols/RelWithDebInfo, OptimizedRelease, and GUI selection.
 
 ## Libraries, plugins, and plugin types
 
 ```text
 rpp library create LIBRARY [--path DIRECTORY]
-rpp library register LIBRARY_PATH [--link]
+rpp library register LIBRARY_PATH [--link] [--jobs N] [--build-type PROFILE]
 rpp library unregister LIBRARY
-rpp library refresh LIBRARY
+rpp library refresh LIBRARY [--jobs N] [--build-type PROFILE]
 rpp library info LIBRARY
 rpp library list
 
@@ -113,8 +113,8 @@ For an existing library, `register` copies it into the home by default.
 `--link` keeps it at its current location. `unregister` removes that managed
 copy or link; the external source of a linked library is retained.
 
-Named library operations select [plugin][glossary-plugin] implementations by default. `--type`
-selects [plugin types][glossary-plugin-type]; `register --type` accepts a Cap'n Proto source file.
+Named library operations select plugin implementations by default. `--type`
+selects plugin types; `register --type` accepts a Cap'n Proto source file.
 `--override` applies to plugin-type registration. Registering an existing
 implementation updates its metadata. Plugin sources must be inside their
 library, normally under `plugins`; type sources belong under `plugin_types`.
@@ -137,6 +137,18 @@ With `--type`, it uses each named type's registered source path and re-registers
 the whole Cap'n Proto file, including every plugin type and supporting struct
 defined there. Multiple names from the same file refresh that file once.
 
+Whole-library `register` and `refresh` accept `--jobs N` (or `-j N`), defaulting
+to four compilation workers, and `--build-type PROFILE`. The profile overrides
+the global default for that operation. For example:
+
+```bash
+rpp library refresh my_library --jobs 4 --build-type OptimizedRelease
+```
+
+See [refresh, rebuild, and reload](registry.md#refresh-rebuild-and-reload) before
+updating compiled consumers; these commands do not replace runtime lifecycle
+operations or a ROS/application build.
+
 ## Workspaces and scripts
 
 ```text
@@ -156,7 +168,7 @@ registered library name containing `.rppws`. Where optional, `WORKSPACE`
 defaults to the current directory.
 
 `ws list` discovers registered libraries that contain workspaces and displays
-their script references. `ws info` describes one workspace and its [components][glossary-component].
+their script references. `ws info` describes one workspace and its components.
 Script references may be displayed names, filenames, or paths; ambiguous names
 are rejected. Quote names containing spaces.
 
@@ -181,7 +193,7 @@ rpp ws script config import WORKSPACE SOURCE_WORKSPACE::SCRIPT CONFIGURATION
 ```
 
 New scripts start with a `Default` configuration. `copy` duplicates assignments
-within the same script; it does not copy [component][glossary-component] instances. `import` copies
+within the same script; it does not copy component instances. `import` copies
 the source configuration and its component trees into the target workspace,
 giving the copied components new IDs. First link the source script into the
 target using its reference from `ws list`:
@@ -214,7 +226,7 @@ rpp ws component parameter set WORKSPACE COMPONENT PARAMETER VALUE
 rpp ws component context WORKSPACE COMPONENT
 ```
 
-`COMPONENT` and `PARENT` accept [component][glossary-component] names or IDs from `component list`.
+`COMPONENT` and `PARENT` accept component names or IDs from `component list`.
 Script assignments use the active configuration unless `--configuration` is
 specified. Subcomponent commands operate on a particular parent's slot.
 `context` prints the component, descriptor, and parameter-source paths as JSON.
@@ -243,14 +255,14 @@ rpp completion [--shell bash]
 
 `compile` currently compiles `.cpp` and `.hpp` implementations into a temporary
 shared library for diagnostics; it does not install the result. It attempts to
-infer the [plugin type][glossary-plugin-type] unless `--plugin-type-name` is supplied. Compiler failures
+infer the plugin type unless `--plugin-type-name` is supplied. Compiler failures
 print diagnostics to standard error and return exit code 1; success returns 0. The
 `--type plugin-type` branch currently checks the source extension and reports
 it; it does not invoke interface generation. Register a type through
 `library LIBRARY register SOURCE --type` to generate its interfaces.
 
 The test command creates RPP fixtures from `rpp_testing` and prints their paths
-and [plugin][glossary-plugin] metadata as JSON. An explicit output directory must already exist.
+and plugin metadata as JSON. An explicit output directory must already exist.
 This command prepares fixtures; it does not run pytest.
 
 Only Bash completion is supported. Enable it in the current Bash shell with:
@@ -304,6 +316,6 @@ Missing or malformed metadata yields no dynamic matches. Command and flag
 completion remains available without an initialized registry. Bash's normal
 common-prefix and match-list behavior is retained.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin-type]: glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

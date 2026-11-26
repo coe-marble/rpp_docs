@@ -1,6 +1,8 @@
 # RPP integrated demos
 
-Status: planned after the six core tutorials.
+Status: the integrated rpp_demos localization demo is planned. Existing
+[rpp_localization launch files and bag tooling](interfaces/estimation/generic-estimation-and-localization.md)
+are separate implemented sources. See [implementation status](status.md).
 
 The first demo will be `localization/`: run multiple localization algorithms
 under ROS 2 and demonstrate RPP lifecycle management through `rpp_ros2`.
@@ -24,5 +26,5 @@ Use `ros2 topic` to inspect data and state and the bridge's supported CLI
 command path to request transitions. Explain the relationship between RPP
 component state and any ROS node lifecycle; avoid assuming they are identical.
 
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-plugin]: glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."

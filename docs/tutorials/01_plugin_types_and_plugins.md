@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Read the [shared prerequisites](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/README.md#prerequisites-and-execution) for the repository layout and environment requirements.
+Read the [shared prerequisites](README.md#prerequisites-and-execution) for the repository layout and environment requirements.
 Have the `rpp_common` and `rpp_demos` sources available in your integration
 checkout. This tutorial is a source walkthrough; there is no Python driver or
 registration step. Tutorial 02 introduces the CLI commands.
@@ -27,7 +27,7 @@ can be used as method inputs and results without defining a plugin type.
 
 The accompanying [`rpp_common/anot.capnp`](https://github.com/coe-marble/rpp_common/blob/develop/rpp_common/common_plugin_types/rpp_common/anot.capnp)
 defines the `plugin` annotation. A schema uses `$Anot.plugin(...)` to mark an
-interface for registration. Each plugin [library][glossary-library] defines its
+interface for registration. Each plugin library defines its
 own contracts independently of the algorithms that implement them.
 
 Now open the example library's
@@ -59,12 +59,12 @@ library declares these types:
 Open [`affine_processor.py`](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/example_library/plugins/affine_processor.py).
 `AffineProcessor` inherits the generated `ScalarProcessor` interface and
 implements `process(value)` as `gain * value + offset`. Its `PARAMETERS` declares
-the defaults gain `1` and offset `0`; these settings belong to a [component][glossary-component]
+the defaults gain `1` and offset `0`; these settings belong to a component
 instance rather than the method's input signature.
 
 Find the corresponding `Plugins` entry in `plugins.json`. It supplies the source
 path, the implementation name `AffineProcessor`, and its contract
-`example_library::ScalarProcessor`. The [library][glossary-library] name comes from
+`example_library::ScalarProcessor`. The library name comes from
 [`package.json`](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/example_library/package.json).
 
 Then read [`accumulating_processor.py`](https://github.com/coe-marble/rpp_demos/blob/develop/tutorials/example_library/plugins/accumulating_processor.py).
@@ -80,10 +80,10 @@ non-finite inputs and results.
 Other method names present in these implementations are `on_configure`,
 `on_activate`, `on_deactivate`, and `on_cleanup`. Their behavior is covered later.
 
-Continue to [Tutorial 02: CLI registration and inspection](https://github.com/coe-marble/rpp_docs/blob/develop/docs/tutorials/02_registration.md)
+Continue to [Tutorial 02: CLI registration and inspection](02_registration.md)
 to register the library and inspect the generated Python and C++ interfaces.
 
-[glossary-plugin-type]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
-[glossary-plugin]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
-[glossary-component]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
-[glossary-library]: https://github.com/coe-marble/rpp_docs/blob/develop/docs/glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
+[glossary-plugin-type]: ../glossary.md#plugin-type "Plugin Type: a language-neutral contract implemented by plugins."
+[glossary-plugin]: ../glossary.md#plugin "Plugin: a concrete implementation of a Plugin Type."
+[glossary-component]: ../glossary.md#component "Component: a saved plugin configuration with parameters and optional subcomponents."
+[glossary-library]: ../glossary.md#library "Library: a source directory grouping Plugin Types, Plugins, and related files."
